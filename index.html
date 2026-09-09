@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Powder Box Sandbox - iPad Edition</title>
+    <title>Powder Box Sandbox - iPad Touch Edition</title>
     <style>
         * {
             box-sizing: border-box;
@@ -153,39 +153,44 @@ const ELEMENTS = {
     WOOD:        { id: 2,  color: [139, 69, 19, 255],   cat: 'Solids' },
     GLASS:       { id: 3,  color: [200, 240, 255, 100], cat: 'Solids' },
     ICE:         { id: 4,  color: [170, 220, 255, 200], cat: 'Solids' },
-    COPPER:      { id: 5,  color: [184, 115, 51, 255],  cat: 'Electricity' },
+    TORCH:       { id: 5,  color: [255, 180, 0, 255],   cat: 'Solids' },
+    BOUNCY:      { id: 6,  color: [255, 105, 180, 255], cat: 'Solids' },
+    COPPER:      { id: 7,  color: [184, 115, 51, 255],  cat: 'Electricity' },
 
-    SAND:        { id: 6,  color: [230, 200, 110, 255], cat: 'Powders' },
-    GUNPOWDER:   { id: 7,  color: [90, 90, 90, 255],    cat: 'Powders' },
-    SALT:        { id: 8,  color: [240, 240, 240, 255], cat: 'Powders' },
-    SEED:        { id: 9,  color: [80, 200, 80, 255],   cat: 'Powders' },
-    SNOW:        { id: 10, color: [250, 250, 255, 255], cat: 'Powders' },
+    SAND:        { id: 8,  color: [230, 200, 110, 255], cat: 'Powders' },
+    GUNPOWDER:   { id: 9,  color: [90, 90, 90, 255],    cat: 'Powders' },
+    SALT:        { id: 10, color: [240, 240, 240, 255], cat: 'Powders' },
+    SEED:        { id: 11, color: [80, 200, 80, 255],   cat: 'Powders' },
+    TERMITE:     { id: 12, color: [210, 140, 80, 255],  cat: 'Powders' },
+    SNOW:        { id: 13, color: [250, 250, 255, 255], cat: 'Powders' },
 
-    WATER:       { id: 11, color: [50, 150, 255, 255],  cat: 'Liquids' },
-    OIL:         { id: 12, color: [160, 110, 20, 255],  cat: 'Liquids' },
-    ACID:        { id: 13, color: [100, 255, 0, 255],   cat: 'Liquids' },
-    LAVA:        { id: 14, color: [255, 100, 0, 255],   cat: 'Liquids' },
-    NITRO:       { id: 15, color: [0, 200, 150, 255],   cat: 'Liquids' },
+    WATER:       { id: 14, color: [50, 150, 255, 255],  cat: 'Liquids' },
+    OIL:         { id: 15, color: [160, 110, 20, 255],  cat: 'Liquids' },
+    ACID:        { id: 16, color: [100, 255, 0, 255],   cat: 'Liquids' },
+    LAVA:        { id: 17, color: [255, 100, 0, 255],   cat: 'Liquids' },
+    NITRO:       { id: 18, color: [0, 200, 150, 255],   cat: 'Liquids' },
 
-    FIRE:        { id: 16, color: [255, 60, 0, 255],    cat: 'Energy' },
-    SPARK:       { id: 17, color: [255, 255, 100, 255], cat: 'Electricity' },
-    ELECTRIC:    { id: 18, color: [0, 240, 255, 255],   cat: 'Electricity' },
+    FIRE:        { id: 19, color: [255, 60, 0, 255],    cat: 'Energy' },
+    SPARK:       { id: 20, color: [255, 255, 100, 255], cat: 'Electricity' },
+    ELECTRIC:    { id: 21, color: [0, 240, 255, 255],   cat: 'Electricity' },
 
-    SMOKE:       { id: 19, color: [100, 100, 100, 180], cat: 'Gases' },
-    GAS:         { id: 20, color: [180, 220, 100, 150], cat: 'Gases' },
-    METHANE:     { id: 21, color: [220, 150, 255, 160], cat: 'Gases' },
-    STEAM:       { id: 22, color: [220, 220, 240, 160], cat: 'Gases' },
+    SMOKE:       { id: 22, color: [100, 100, 100, 180], cat: 'Gases' },
+    GAS:         { id: 23, color: [180, 220, 100, 150], cat: 'Gases' },
+    METHANE:     { id: 24, color: [220, 150, 255, 160], cat: 'Gases' },
+    STEAM:       { id: 25, color: [220, 220, 240, 160], cat: 'Gases' },
 
-    DISPENSER:   { id: 23, color: [255, 140, 0, 255],   cat: 'Special' },
-    WATER_DISP:  { id: 24, color: [0, 100, 255, 255],   cat: 'Special' },
-    LAVA_DISP:   { id: 25, color: [200, 50, 0, 255],    cat: 'Special' },
-    HOPPER:      { id: 26, color: [140, 100, 180, 255], cat: 'Special' },
-    VIRUS:       { id: 27, color: [200, 0, 200, 255],   cat: 'Special' },
-    CLONE:       { id: 28, color: [255, 0, 200, 255],   cat: 'Special' },
-    VOID:        { id: 29, color: [150, 0, 0, 255],     cat: 'Special' },
-    FAN:         { id: 30, color: [80, 180, 200, 255],  cat: 'Special' },
-    C4:          { id: 31, color: [200, 160, 120, 255], cat: 'Solids' },
-    ERASER:      { id: 32, color: [0, 0, 0, 255],       cat: 'Tools' }
+    DISPENSER:   { id: 26, color: [255, 140, 0, 255],   cat: 'Special' },
+    WATER_DISP:  { id: 27, color: [0, 100, 255, 255],   cat: 'Special' },
+    LAVA_DISP:   { id: 28, color: [200, 50, 0, 255],    cat: 'Special' },
+    CONVEY_L:    { id: 29, color: [70, 130, 180, 255],  cat: 'Special' },
+    CONVEY_R:    { id: 30, color: [100, 149, 237, 255], cat: 'Special' },
+    HOPPER:      { id: 31, color: [140, 100, 180, 255], cat: 'Special' },
+    VIRUS:       { id: 32, color: [200, 0, 200, 255],   cat: 'Special' },
+    CLONE:       { id: 33, color: [255, 0, 200, 255],   cat: 'Special' },
+    VOID:        { id: 34, color: [150, 0, 0, 255],     cat: 'Special' },
+    FAN:         { id: 35, color: [80, 180, 200, 255],  cat: 'Special' },
+    C4:          { id: 36, color: [200, 160, 120, 255], cat: 'Solids' },
+    ERASER:      { id: 37, color: [0, 0, 0, 255],       cat: 'Tools' }
 };
 
 let grid = new Uint8Array(WIDTH * HEIGHT);
@@ -211,7 +216,7 @@ categories.forEach(cat => {
         const el = ELEMENTS[key];
         if (el.cat === cat && key !== 'EMPTY') {
             const btn = document.createElement('button');
-            btn.textContent = key.replace('_DISP', ' SPN');
+            btn.textContent = key.replace('_DISP', ' SPN').replace('CONVEY_', 'BELT ');
             if (el.id === activeElement) btn.classList.add('active');
             btn.onclick = () => {
                 document.querySelectorAll('.categories button').forEach(b => b.classList.remove('active'));
@@ -244,7 +249,7 @@ document.getElementById('explodeBtn').onclick = () => {
     }
 };
 
-// Touch and Pointer Event Normalization for iPad
+// Fluid iPad & Mobile Continuous Touch Handler
 let isDrawing = false;
 
 function applyBrush(clientX, clientY) {
@@ -272,28 +277,32 @@ function applyBrush(clientX, clientY) {
     }
 }
 
-// Mouse Handlers
-canvas.addEventListener('mousedown', (e) => { isDrawing = true; applyBrush(e.clientX, e.clientY); });
-canvas.addEventListener('mousemove', (e) => { if (isDrawing) applyBrush(e.clientX, e.clientY); });
-window.addEventListener('mouseup', () => isDrawing = false);
-
-// Touch Handlers (iPad/iOS Support)
-canvas.addEventListener('touchstart', (e) => {
+// Global Touch/Mouse Listeners to ensure swipe-painting works properly
+function startDraw(e) {
     isDrawing = true;
-    const touch = e.touches[0];
-    applyBrush(touch.clientX, touch.clientY);
-    e.preventDefault();
-}, { passive: false });
+    const pos = e.touches ? e.touches[0] : e;
+    applyBrush(pos.clientX, pos.clientY);
+}
 
-canvas.addEventListener('touchmove', (e) => {
-    if (isDrawing) {
-        const touch = e.touches[0];
-        applyBrush(touch.clientX, touch.clientY);
-    }
-    e.preventDefault();
-}, { passive: false });
+function moveDraw(e) {
+    if (!isDrawing) return;
+    const pos = e.touches ? e.touches[0] : e;
+    applyBrush(pos.clientX, pos.clientY);
+    if (e.touches) e.preventDefault();
+}
 
-window.addEventListener('touchend', () => isDrawing = false);
+function stopDraw() {
+    isDrawing = false;
+}
+
+canvas.addEventListener('mousedown', startDraw);
+canvas.addEventListener('mousemove', moveDraw);
+window.addEventListener('mouseup', stopDraw);
+
+canvas.addEventListener('touchstart', (e) => { startDraw(e); e.preventDefault(); }, { passive: false });
+canvas.addEventListener('touchmove', moveDraw, { passive: false });
+window.addEventListener('touchend', stopDraw);
+window.addEventListener('touchcancel', stopDraw);
 
 // Cellular Physics Loop
 function update() {
@@ -314,6 +323,33 @@ function update() {
             const right = y * WIDTH + (x + 1);
             const downLeft = targetY * WIDTH + (x - 1);
             const downRight = targetY * WIDTH + (x + 1);
+
+            // TORCH (Infinite Fire Generator)
+            if (type === ELEMENTS.TORCH.id) {
+                if (y > 0 && grid[up] === ELEMENTS.EMPTY.id) {
+                    nextGrid[up] = ELEMENTS.FIRE.id;
+                    life[up] = 10;
+                }
+                continue;
+            }
+
+            // CONVEYOR BELTS
+            if (type === ELEMENTS.CONVEY_L.id || type === ELEMENTS.CONVEY_R.id) {
+                if (y > 0) {
+                    const aboveItem = grid[up];
+                    if (aboveItem !== ELEMENTS.EMPTY.id && aboveItem !== ELEMENTS.WALL.id) {
+                        const shiftX = (type === ELEMENTS.CONVEY_L.id) ? x - 1 : x + 1;
+                        if (shiftX >= 0 && shiftX < WIDTH) {
+                            const dest = (y - 1) * WIDTH + shiftX;
+                            if (grid[dest] === ELEMENTS.EMPTY.id) {
+                                nextGrid[dest] = aboveItem;
+                                nextGrid[up] = ELEMENTS.EMPTY.id;
+                            }
+                        }
+                    }
+                }
+                continue;
+            }
 
             // VIRUS MECHANIC
             if (type === ELEMENTS.VIRUS.id) {
@@ -438,11 +474,22 @@ function update() {
                 continue;
             }
 
-            // POWDERS (Sand, Gunpowder, Salt, Seed, Snow)
-            if (type === ELEMENTS.SAND.id || type === ELEMENTS.GUNPOWDER.id || type === ELEMENTS.SALT.id || type === ELEMENTS.SEED.id || type === ELEMENTS.SNOW.id) {
+            // POWDERS (Sand, Gunpowder, Salt, Seed, Termite, Snow)
+            if (type === ELEMENTS.SAND.id || type === ELEMENTS.GUNPOWDER.id || type === ELEMENTS.SALT.id || type === ELEMENTS.SEED.id || type === ELEMENTS.TERMITE.id || type === ELEMENTS.SNOW.id) {
                 if (gDir !== 0 && targetY >= 0 && targetY < HEIGHT) {
                     const target = grid[down];
                     const isLiquid = target === ELEMENTS.WATER.id || target === ELEMENTS.OIL.id || target === ELEMENTS.ACID.id;
+
+                    // Bounce off bouncy pad
+                    if (target === ELEMENTS.BOUNCY.id) {
+                        const bounceY = (y - 3) * WIDTH + x;
+                        if (bounceY >= 0 && grid[bounceY] === ELEMENTS.EMPTY.id) {
+                            nextGrid[bounceY] = type;
+                            nextGrid[i] = ELEMENTS.EMPTY.id;
+                            continue;
+                        }
+                    }
+
                     if (target === ELEMENTS.EMPTY.id || isLiquid) {
                         nextGrid[i] = target;
                         nextGrid[down] = type;
@@ -459,6 +506,12 @@ function update() {
                     [down, left, right].forEach(adj => {
                         if (adj >= 0 && adj < WIDTH * HEIGHT && grid[adj] === ELEMENTS.WATER.id) {
                             nextGrid[adj] = ELEMENTS.WOOD.id;
+                        }
+                    });
+                } else if (type === ELEMENTS.TERMITE.id) {
+                    [down, up, left, right].forEach(adj => {
+                        if (adj >= 0 && adj < WIDTH * HEIGHT && grid[adj] === ELEMENTS.WOOD.id) {
+                            nextGrid[adj] = ELEMENTS.TERMITE.id;
                         }
                     });
                 }

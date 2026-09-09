@@ -2,54 +2,69 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Powder Box: Dispensers & Hoppers</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Powder Box Sandbox - iPad Edition</title>
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
         body {
             margin: 0;
             background: #0d0d11;
             color: #eceff4;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            padding: 10px;
-            user-select: none;
+            padding: 8px;
+            touch-action: none;
+            overflow: hidden;
         }
-        h2 { margin: 2px 0 8px 0; color: #88c0d0; font-size: 22px; }
+        h2 {
+            margin: 2px 0 6px 0;
+            color: #88c0d0;
+            font-size: 20px;
+            text-align: center;
+        }
         #canvas-container {
             position: relative;
             box-shadow: 0 8px 30px rgba(0,0,0,0.9);
-            border-radius: 4px;
+            border-radius: 6px;
             overflow: hidden;
+            touch-action: none;
         }
         canvas {
             background: #000;
             cursor: crosshair;
             display: block;
             image-rendering: pixelated;
+            touch-action: none;
         }
         .control-panel {
-            margin-top: 10px;
+            margin-top: 8px;
             max-width: 900px;
             width: 100%;
             background: #181920;
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
             border: 1px solid #2e3440;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
+            max-height: 35vh;
+            overflow-y: auto;
         }
         .settings {
             display: flex;
-            gap: 16px;
+            gap: 12px;
             align-items: center;
             font-size: 13px;
             border-bottom: 1px solid #2e3440;
-            padding-bottom: 8px;
+            padding-bottom: 6px;
             flex-wrap: wrap;
         }
         .categories {
@@ -60,14 +75,14 @@
         .cat-row {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             flex-wrap: wrap;
         }
         .cat-label {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             color: #d8dee9;
-            width: 90px;
+            width: 80px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -75,22 +90,24 @@
             background: #2e3440;
             color: #e5e9f0;
             border: 1px solid #4c566a;
-            padding: 5px 9px;
-            border-radius: 4px;
+            padding: 8px 10px;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 12px;
             font-weight: 500;
-            transition: all 0.1s;
+            touch-action: manipulation;
         }
-        button:hover { background: #434c5e; color: #fff; }
-        button.active {
+        button:active, button.active {
             background: #5e81ac;
             border-color: #81a1c1;
             color: #fff;
             box-shadow: 0 0 6px rgba(94,129,172,0.6);
         }
         .btn-action { background: #bf616a; border-color: #d08770; color: #fff; }
-        .btn-action:hover { background: #d08770; }
+        .btn-action:active { background: #d08770; }
+        select, input[type=range] {
+            touch-action: manipulation;
+        }
     </style>
 </head>
 <body>
@@ -106,7 +123,7 @@
             <label>Brush: <input type="range" id="brushSize" min="1" max="15" value="3"></label>
             <span id="brushVal">3px</span>
             
-            <label style="margin-left: 10px;">Gravity: 
+            <label style="margin-left: 8px;">Gravity: 
                 <select id="gravityDir">
                     <option value="DOWN">Down</option>
                     <option value="UP">Up</option>
@@ -131,39 +148,44 @@ const imgData = ctx.createImageData(WIDTH, HEIGHT);
 
 // Master Element Definitions
 const ELEMENTS = {
-    EMPTY:     { id: 0,  color: [0, 0, 0, 255],       cat: 'Tools' },
-    WALL:      { id: 1,  color: [120, 120, 120, 255], cat: 'Solids' },
-    WOOD:      { id: 2,  color: [139, 69, 19, 255],   cat: 'Solids' },
-    GLASS:     { id: 3,  color: [200, 240, 255, 100], cat: 'Solids' },
-    COPPER:    { id: 4,  color: [184, 115, 51, 255],  cat: 'Electricity' },
+    EMPTY:       { id: 0,  color: [0, 0, 0, 255],       cat: 'Tools' },
+    WALL:        { id: 1,  color: [120, 120, 120, 255], cat: 'Solids' },
+    WOOD:        { id: 2,  color: [139, 69, 19, 255],   cat: 'Solids' },
+    GLASS:       { id: 3,  color: [200, 240, 255, 100], cat: 'Solids' },
+    ICE:         { id: 4,  color: [170, 220, 255, 200], cat: 'Solids' },
+    COPPER:      { id: 5,  color: [184, 115, 51, 255],  cat: 'Electricity' },
 
-    SAND:      { id: 5,  color: [230, 200, 110, 255], cat: 'Powders' },
-    GUNPOWDER: { id: 6,  color: [90, 90, 90, 255],    cat: 'Powders' },
-    SALT:      { id: 7,  color: [240, 240, 240, 255], cat: 'Powders' },
-    SEED:      { id: 8,  color: [80, 200, 80, 255],   cat: 'Powders' },
-    SNOW:      { id: 9,  color: [250, 250, 255, 255], cat: 'Powders' },
+    SAND:        { id: 6,  color: [230, 200, 110, 255], cat: 'Powders' },
+    GUNPOWDER:   { id: 7,  color: [90, 90, 90, 255],    cat: 'Powders' },
+    SALT:        { id: 8,  color: [240, 240, 240, 255], cat: 'Powders' },
+    SEED:        { id: 9,  color: [80, 200, 80, 255],   cat: 'Powders' },
+    SNOW:        { id: 10, color: [250, 250, 255, 255], cat: 'Powders' },
 
-    WATER:     { id: 10, color: [50, 150, 255, 255],  cat: 'Liquids' },
-    OIL:       { id: 11, color: [160, 110, 20, 255],  cat: 'Liquids' },
-    ACID:      { id: 12, color: [100, 255, 0, 255],   cat: 'Liquids' },
-    LAVA:      { id: 13, color: [255, 100, 0, 255],   cat: 'Liquids' },
-    NITRO:     { id: 14, color: [0, 200, 150, 255],   cat: 'Liquids' },
+    WATER:       { id: 11, color: [50, 150, 255, 255],  cat: 'Liquids' },
+    OIL:         { id: 12, color: [160, 110, 20, 255],  cat: 'Liquids' },
+    ACID:        { id: 13, color: [100, 255, 0, 255],   cat: 'Liquids' },
+    LAVA:        { id: 14, color: [255, 100, 0, 255],   cat: 'Liquids' },
+    NITRO:       { id: 15, color: [0, 200, 150, 255],   cat: 'Liquids' },
 
-    FIRE:      { id: 15, color: [255, 60, 0, 255],    cat: 'Energy' },
-    SPARK:     { id: 16, color: [255, 255, 100, 255], cat: 'Electricity' },
-    ELECTRIC:  { id: 17, color: [0, 240, 255, 255],   cat: 'Electricity' },
+    FIRE:        { id: 16, color: [255, 60, 0, 255],    cat: 'Energy' },
+    SPARK:       { id: 17, color: [255, 255, 100, 255], cat: 'Electricity' },
+    ELECTRIC:    { id: 18, color: [0, 240, 255, 255],   cat: 'Electricity' },
 
-    SMOKE:     { id: 18, color: [100, 100, 100, 180], cat: 'Gases' },
-    GAS:       { id: 19, color: [180, 220, 100, 150], cat: 'Gases' },
-    STEAM:     { id: 20, color: [220, 220, 240, 160], cat: 'Gases' },
+    SMOKE:       { id: 19, color: [100, 100, 100, 180], cat: 'Gases' },
+    GAS:         { id: 20, color: [180, 220, 100, 150], cat: 'Gases' },
+    METHANE:     { id: 21, color: [220, 150, 255, 160], cat: 'Gases' },
+    STEAM:       { id: 22, color: [220, 220, 240, 160], cat: 'Gases' },
 
-    DISPENSER: { id: 21, color: [255, 140, 0, 255],   cat: 'Special' },
-    HOPPER:    { id: 22, color: [140, 100, 180, 255], cat: 'Special' },
-    CLONE:     { id: 23, color: [255, 0, 200, 255],   cat: 'Special' },
-    VOID:      { id: 24, color: [150, 0, 0, 255],     cat: 'Special' },
-    FAN:       { id: 25, color: [80, 180, 200, 255],  cat: 'Special' },
-    C4:        { id: 26, color: [200, 160, 120, 255], cat: 'Solids' },
-    ERASER:    { id: 27, color: [0, 0, 0, 255],       cat: 'Tools' }
+    DISPENSER:   { id: 23, color: [255, 140, 0, 255],   cat: 'Special' },
+    WATER_DISP:  { id: 24, color: [0, 100, 255, 255],   cat: 'Special' },
+    LAVA_DISP:   { id: 25, color: [200, 50, 0, 255],    cat: 'Special' },
+    HOPPER:      { id: 26, color: [140, 100, 180, 255], cat: 'Special' },
+    VIRUS:       { id: 27, color: [200, 0, 200, 255],   cat: 'Special' },
+    CLONE:       { id: 28, color: [255, 0, 200, 255],   cat: 'Special' },
+    VOID:        { id: 29, color: [150, 0, 0, 255],     cat: 'Special' },
+    FAN:         { id: 30, color: [80, 180, 200, 255],  cat: 'Special' },
+    C4:          { id: 31, color: [200, 160, 120, 255], cat: 'Solids' },
+    ERASER:      { id: 32, color: [0, 0, 0, 255],       cat: 'Tools' }
 };
 
 let grid = new Uint8Array(WIDTH * HEIGHT);
@@ -173,7 +195,7 @@ let life = new Uint8Array(WIDTH * HEIGHT);
 let activeElement = ELEMENTS.SAND.id;
 let gravityMode = 'DOWN';
 
-// Category Layout UI
+// Build UI Elements
 const container = document.getElementById('elementContainer');
 const categories = ['Powders', 'Liquids', 'Solids', 'Gases', 'Electricity', 'Energy', 'Special', 'Tools'];
 
@@ -189,7 +211,7 @@ categories.forEach(cat => {
         const el = ELEMENTS[key];
         if (el.cat === cat && key !== 'EMPTY') {
             const btn = document.createElement('button');
-            btn.textContent = key;
+            btn.textContent = key.replace('_DISP', ' SPN');
             if (el.id === activeElement) btn.classList.add('active');
             btn.onclick = () => {
                 document.querySelectorAll('.categories button').forEach(b => b.classList.remove('active'));
@@ -215,19 +237,20 @@ document.getElementById('clearBtn').onclick = () => {
 
 document.getElementById('explodeBtn').onclick = () => {
     for (let i = 0; i < grid.length; i++) {
-        if (grid[i] === ELEMENTS.GUNPOWDER.id || grid[i] === ELEMENTS.C4.id || grid[i] === ELEMENTS.NITRO.id) {
+        if (grid[i] === ELEMENTS.GUNPOWDER.id || grid[i] === ELEMENTS.C4.id || grid[i] === ELEMENTS.NITRO.id || grid[i] === ELEMENTS.METHANE.id) {
             grid[i] = ELEMENTS.FIRE.id;
             life[i] = 20;
         }
     }
 };
 
-// Canvas Painting Interaction
+// Touch and Pointer Event Normalization for iPad
 let isDrawing = false;
-function draw(e) {
+
+function applyBrush(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
-    const cx = Math.floor((e.clientX - rect.left) * (WIDTH / rect.width));
-    const cy = Math.floor((e.clientY - rect.top) * (HEIGHT / rect.height));
+    const cx = Math.floor((clientX - rect.left) * (WIDTH / rect.width));
+    const cy = Math.floor((clientY - rect.top) * (HEIGHT / rect.height));
     const radius = parseInt(brushInput.value);
 
     for (let dy = -radius; dy <= radius; dy++) {
@@ -242,16 +265,35 @@ function draw(e) {
                     life[idx] = 0;
                     if (fill === ELEMENTS.FIRE.id) life[idx] = 12 + Math.random() * 8;
                     if (fill === ELEMENTS.ELECTRIC.id) life[idx] = 5;
-                    if (fill === ELEMENTS.SMOKE.id || fill === ELEMENTS.STEAM.id) life[idx] = 40 + Math.random() * 20;
+                    if (fill === ELEMENTS.SMOKE.id || fill === ELEMENTS.STEAM.id || fill === ELEMENTS.METHANE.id) life[idx] = 40 + Math.random() * 20;
                 }
             }
         }
     }
 }
 
-canvas.addEventListener('mousedown', (e) => { isDrawing = true; draw(e); });
-canvas.addEventListener('mousemove', (e) => { if (isDrawing) draw(e); });
+// Mouse Handlers
+canvas.addEventListener('mousedown', (e) => { isDrawing = true; applyBrush(e.clientX, e.clientY); });
+canvas.addEventListener('mousemove', (e) => { if (isDrawing) applyBrush(e.clientX, e.clientY); });
 window.addEventListener('mouseup', () => isDrawing = false);
+
+// Touch Handlers (iPad/iOS Support)
+canvas.addEventListener('touchstart', (e) => {
+    isDrawing = true;
+    const touch = e.touches[0];
+    applyBrush(touch.clientX, touch.clientY);
+    e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+    if (isDrawing) {
+        const touch = e.touches[0];
+        applyBrush(touch.clientX, touch.clientY);
+    }
+    e.preventDefault();
+}, { passive: false });
+
+window.addEventListener('touchend', () => isDrawing = false);
 
 // Cellular Physics Loop
 function update() {
@@ -273,17 +315,45 @@ function update() {
             const downLeft = targetY * WIDTH + (x - 1);
             const downRight = targetY * WIDTH + (x + 1);
 
-            // DISPENSER (Spawns items out the bottom)
-            if (type === ELEMENTS.DISPENSER.id) {
-                // Check if an element is sitting directly on top to select payload
-                if (y > 0 && grid[up] !== ELEMENTS.EMPTY.id && grid[up] !== ELEMENTS.DISPENSER.id && grid[up] !== ELEMENTS.HOPPER.id) {
+            // VIRUS MECHANIC
+            if (type === ELEMENTS.VIRUS.id) {
+                [down, up, left, right].forEach(adj => {
+                    if (adj >= 0 && adj < WIDTH * HEIGHT && grid[adj] !== ELEMENTS.EMPTY.id && grid[adj] !== ELEMENTS.WALL.id && grid[adj] !== ELEMENTS.GLASS.id && grid[adj] !== ELEMENTS.VIRUS.id) {
+                        if (Math.random() < 0.05) {
+                            nextGrid[adj] = ELEMENTS.VIRUS.id;
+                        }
+                    }
+                });
+                continue;
+            }
+
+            // ICE MECHANICS
+            if (type === ELEMENTS.ICE.id) {
+                [down, up, left, right].forEach(adj => {
+                    if (adj >= 0 && adj < WIDTH * HEIGHT) {
+                        if (grid[adj] === ELEMENTS.WATER.id && Math.random() < 0.02) {
+                            nextGrid[adj] = ELEMENTS.ICE.id;
+                        } else if (grid[adj] === ELEMENTS.FIRE.id || grid[adj] === ELEMENTS.LAVA.id) {
+                            nextGrid[i] = ELEMENTS.WATER.id;
+                        }
+                    }
+                });
+                continue;
+            }
+
+            // DISPENSERS
+            if (type === ELEMENTS.DISPENSER.id || type === ELEMENTS.WATER_DISP.id || type === ELEMENTS.LAVA_DISP.id) {
+                if (type === ELEMENTS.DISPENSER.id && y > 0 && grid[up] !== ELEMENTS.EMPTY.id && grid[up] !== ELEMENTS.DISPENSER.id) {
                     dispenserTypes[i] = grid[up];
                 }
 
-                // Fire payload downward at regular intervals
                 if (y < HEIGHT - 1 && grid[down] === ELEMENTS.EMPTY.id) {
-                    if (Math.random() < 0.12) {
-                        const payload = dispenserTypes[i] !== 0 ? dispenserTypes[i] : ELEMENTS.SAND.id;
+                    if (Math.random() < 0.15) {
+                        let payload = ELEMENTS.SAND.id;
+                        if (type === ELEMENTS.WATER_DISP.id) payload = ELEMENTS.WATER.id;
+                        else if (type === ELEMENTS.LAVA_DISP.id) payload = ELEMENTS.LAVA.id;
+                        else if (dispenserTypes[i] !== 0) payload = dispenserTypes[i];
+
                         nextGrid[down] = payload;
                         if (payload === ELEMENTS.FIRE.id) life[down] = 12;
                     }
@@ -291,12 +361,11 @@ function update() {
                 continue;
             }
 
-            // HOPPER (Funnels particles sitting on top to below)
+            // HOPPER
             if (type === ELEMENTS.HOPPER.id) {
                 if (y > 0 && y < HEIGHT - 1) {
                     const aboveItem = grid[up];
-                    // Pull gravity-affected items from above and move them below
-                    if (aboveItem !== ELEMENTS.EMPTY.id && aboveItem !== ELEMENTS.WALL.id && aboveItem !== ELEMENTS.HOPPER.id && aboveItem !== ELEMENTS.DISPENSER.id) {
+                    if (aboveItem !== ELEMENTS.EMPTY.id && aboveItem !== ELEMENTS.WALL.id && aboveItem !== ELEMENTS.HOPPER.id) {
                         if (grid[down] === ELEMENTS.EMPTY.id) {
                             nextGrid[down] = aboveItem;
                             nextGrid[up] = ELEMENTS.EMPTY.id;
@@ -306,11 +375,11 @@ function update() {
                 continue;
             }
 
-            // FAN (Generates upward air currents)
+            // FAN
             if (type === ELEMENTS.FAN.id) {
                 for (let reach = 1; reach <= 6; reach++) {
                     const above = (y - reach) * WIDTH + x;
-                    if (above >= 0 && (grid[above] === ELEMENTS.SMOKE.id || grid[above] === ELEMENTS.STEAM.id || grid[above] === ELEMENTS.GAS.id || grid[above] === ELEMENTS.SAND.id)) {
+                    if (above >= 0 && (grid[above] === ELEMENTS.SMOKE.id || grid[above] === ELEMENTS.STEAM.id || grid[above] === ELEMENTS.GAS.id || grid[above] === ELEMENTS.METHANE.id || grid[above] === ELEMENTS.SAND.id)) {
                         const targetAir = (y - reach - 1) * WIDTH + x;
                         if (targetAir >= 0 && grid[targetAir] === ELEMENTS.EMPTY.id) {
                             nextGrid[targetAir] = grid[above];
@@ -335,7 +404,7 @@ function update() {
                             } else if (grid[adj] === ELEMENTS.WATER.id) {
                                 nextGrid[adj] = ELEMENTS.FIRE.id;
                                 life[adj] = 10;
-                            } else if (grid[adj] === ELEMENTS.GUNPOWDER.id || grid[adj] === ELEMENTS.NITRO.id) {
+                            } else if (grid[adj] === ELEMENTS.GUNPOWDER.id || grid[adj] === ELEMENTS.NITRO.id || grid[adj] === ELEMENTS.METHANE.id) {
                                 nextGrid[adj] = ELEMENTS.FIRE.id;
                             }
                         }
@@ -386,7 +455,6 @@ function update() {
                     }
                 }
 
-                // Plant Growth
                 if (type === ELEMENTS.SEED.id) {
                     [down, left, right].forEach(adj => {
                         if (adj >= 0 && adj < WIDTH * HEIGHT && grid[adj] === ELEMENTS.WATER.id) {
@@ -411,7 +479,6 @@ function update() {
                     }
                 }
 
-                // Reactions
                 if (type === ELEMENTS.ACID.id) {
                     [down, left, right, up].forEach(adj => {
                         if (adj >= 0 && adj < WIDTH * HEIGHT && grid[adj] !== ELEMENTS.EMPTY.id && grid[adj] !== ELEMENTS.GLASS.id && grid[adj] !== ELEMENTS.ACID.id) {
@@ -437,10 +504,10 @@ function update() {
                 continue;
             }
 
-            // GASES (Smoke, Gas, Steam)
-            if (type === ELEMENTS.SMOKE.id || type === ELEMENTS.GAS.id || type === ELEMENTS.STEAM.id) {
+            // GASES (Smoke, Gas, Methane, Steam)
+            if (type === ELEMENTS.SMOKE.id || type === ELEMENTS.GAS.id || type === ELEMENTS.METHANE.id || type === ELEMENTS.STEAM.id) {
                 life[i]--;
-                if (life[i] <= 0 && type !== ELEMENTS.GAS.id) {
+                if (life[i] <= 0 && type !== ELEMENTS.GAS.id && type !== ELEMENTS.METHANE.id) {
                     nextGrid[i] = (type === ELEMENTS.STEAM.id && Math.random() < 0.3) ? ELEMENTS.WATER.id : ELEMENTS.EMPTY.id;
                 } else if (y > 0) {
                     const dir = Math.random() < 0.5 ? -1 : 1;
@@ -466,8 +533,8 @@ function update() {
                             if (target === ELEMENTS.WOOD.id || target === ELEMENTS.OIL.id || target === ELEMENTS.GAS.id) {
                                 nextGrid[adj] = ELEMENTS.FIRE.id;
                                 life[adj] = 18;
-                            } else if (target === ELEMENTS.GUNPOWDER.id || target === ELEMENTS.C4.id || target === ELEMENTS.NITRO.id) {
-                                const radius = (target === ELEMENTS.NITRO.id) ? 10 : (target === ELEMENTS.C4.id) ? 7 : 4;
+                            } else if (target === ELEMENTS.GUNPOWDER.id || target === ELEMENTS.C4.id || target === ELEMENTS.NITRO.id || target === ELEMENTS.METHANE.id) {
+                                const radius = (target === ELEMENTS.NITRO.id || target === ELEMENTS.METHANE.id) ? 10 : (target === ELEMENTS.C4.id) ? 7 : 4;
                                 const centerY = Math.floor(adj / WIDTH);
                                 const centerX = adj % WIDTH;
                                 for (let ex = -radius; ex <= radius; ex++) {

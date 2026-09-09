@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Powder Box: Pro Sandbox</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: #0d0d11;
+            color: #eceff4;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+            user-select: none;
+        }
+        h2 { margin: 2px 0 8px 0; color: #88c0d0; font-size: 22px; }
+        #canvas-container {
+            position: relative;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.9);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        canvas {
+            background: #000;
+            cursor: crosshair;
+            display: block;
+            image-rendering: pixelated;
+        }
+        .control-panel {
+            margin-top: 10px;
+            max-width: 900px;
+            width: 100%;
+            background: #181920;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #2e3440;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .settings {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            font-size: 13px;
+            border-bottom: 1px solid #2e3440;
+            padding-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .categories {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .cat-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .cat-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #d8dee9;
+            width: 90px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        button {
+            background: #2e3440;
+            color: #e5e9f0;
+            border: 1px solid #4c566a;
+            padding: 5px 9px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.1s;
+        }
+        button:hover { background: #434c5e; color: #fff; }
+        button.active {
+            background: #5e81ac;
+            border-color: #81a1c1;
+            color: #fff;
+            box-shadow: 0 0 6px rgba(94,129,172,0.6);
+        }
+        .btn-action { background: #bf616a; border-color: #d08770; color: #fff; }
+        .btn-action:hover { background: #d08770; }
+    </style>
+</head>
+<body>
+
+    <h2>Powder Box Pro</h2>
+
+    <div id="canvas-container">
+        <canvas id="canvas" width="280" height="180" style="width: 840px; height: 540px;"></canvas>
+    </div>
+
+    <div class="control-panel">
+        <div class="settings">
+            <label>Brush: <input type="range" id="brushSize" min="1" max="15" value="3"></label>
+            <span id="brushVal">3px</span>
+            
+            <label style="margin-left: 10px;">Gravity: 
+                <select id="gravityDir">
+                    <option value="DOWN">Down</option>
+                    <option value="UP">Up</option>
+                    <option value="ZERO">Zero-G</option>
+                </select>
+            </label>
+
+            <button class="btn-action" id="clearBtn">Clear Grid</button>
+            <button class="btn-action" id="explodeBtn">Detonate All</button>
+            <span id="fps" style="margin-left: auto; color: #81a1c1; font-family: monospace;">FPS: 60</span>
+        </div>
+
+        <div class="categories" id="elementContainer"></div>
+    </div>
+
+<script>
+const WIDTH = 280;
+const HEIGHT = 180;
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const imgData = ctx.createImageData(WIDTH, HEIGHT);
+
+// Master Element Definitions
+const ELEMENTS = {
+    EMPTY:     { id: 0,  color: [0, 0, 0, 255],       cat: 'Tools' },
+    WALL:      { id: 1,  color: [120, 120, 120, 255], cat: 'Solids' },
+    WOOD:      { id: 2,  color: [139, 69, 19, 255],   cat: 'Solids' },
+    GLASS:     { id: 3,  color: [200, 240, 255, 100], cat: 'Solids' },
+    COPPER:    { id: 4,  color: [184, 115, 51, 255],  cat: 'Electricity' },
+    SEMICON:   { id: 5,  color: [70, 130, 180, 255],  cat: 'Electricity' },
+
+    SAND:      { id: 6,  color: [230, 200, 110, 255], cat: 'Powders' },
+    GUNPOWDER: { id: 7,  color: [90, 90, 90, 255],    cat: 'Powders' },
+    SALT:      { id: 8,  color: [240, 240, 240, 255], cat: 'Powders' },
+    SEED:      { id: 9,  color: [80, 200, 80, 255],   cat: 'Powders' },
+    SNOW:      { id: 10, color: [250, 250, 255, 255], cat: 'Powders' },
+
+    WATER:     { id: 11, color: [50, 150, 255, 255],  cat: 'Liquids' },
+    OIL:       { id: 12, color: [160, 110, 20, 255],  cat: 'Liquids' },
+    ACID:      { id: 13, color: [100, 255, 0, 255],   cat: 'Liquids' },
+    LAVA:      { id: 14, color: [255, 100, 0, 255],   cat: 'Liquids' },
+    NITRO:     { id: 15, color: [0, 200, 150, 255],   cat: 'Liquids' },
+
+    FIRE:      { id: 16, color: [255, 60, 0, 255],    cat: 'Energy' },
+    SPARK:     { id: 17, color: [255, 255, 100, 255], cat: 'Electricity' },
+    ELECTRIC:  { id: 18, color: [0, 240, 255, 255],   cat: 'Electricity' },
+
+    SMOKE:     { id: 19, color: [100, 100, 100, 180], cat: 'Gases' },
+    GAS:       { id: 20, color: [180, 220, 100, 150], cat: 'Gases' },
+    STEAM:     { id: 21, color: [220, 220, 240, 160], cat: 'Gases' },
+
+    CLONE:     { id: 22, color: [255, 0, 200, 255],   cat: 'Special' },
+    VOID:      { id: 23, color: [150, 0, 0, 255],     cat: 'Special' },
+    FAN:       { id: 24, color: [80, 180, 200, 255],  cat: 'Special' },
+    C4:        { id: 25, color: [200, 160, 120, 255], cat: 'Solids' },
+    ERASER:    { id: 26, color: [0, 0, 0, 255],       cat: 'Tools' }
+};
+
+let grid = new Uint8Array(WIDTH * HEIGHT);
+let cloneTypes = new Uint8Array(WIDTH * HEIGHT);
+let life = new Uint8Array(WIDTH * HEIGHT);
+let activeElement = ELEMENTS.SAND.id;
+let gravityMode = 'DOWN';
+
+// Category Layout UI
+const container = document.getElementById('elementContainer');
+const categories = ['Powders', 'Liquids', 'Solids', 'Gases', 'Electricity', 'Energy', 'Special', 'Tools'];
+
+categories.forEach(cat => {
+    const row = document.createElement('div');
+    row.className = 'cat-row';
+    const label = document.createElement('span');
+    label.className = 'cat-label';
+    label.textContent = cat;
+    row.appendChild(label);
+
+    Object.keys(ELEMENTS).forEach(key => {
+        const el = ELEMENTS[key];
+        if (el.cat === cat && key !== 'EMPTY') {
+            const btn = document.createElement('button');
+            btn.textContent = key;
+            if (el.id === activeElement) btn.classList.add('active');
+            btn.onclick = () => {
+                document.querySelectorAll('.categories button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeElement = el.id;
+            };
+            row.appendChild(btn);
+        }
+    });
+    container.appendChild(row);
+});
+
+const brushInput = document.getElementById('brushSize');
+brushInput.oninput = (e) => document.getElementById('brushVal').textContent = e.target.value + 'px';
+document.getElementById('gravityDir').onchange = (e) => gravityMode = e.target.value;
+
+document.getElementById('clearBtn').onclick = () => {
+    grid.fill(0);
+    life.fill(0);
+    cloneTypes.fill(0);
+};
+
+document.getElementById('explodeBtn').onclick = () => {
+    for (let i = 0; i < grid.length; i++) {
+        if (grid[i] === ELEMENTS.GUNPOWDER.id || grid[i] === ELEMENTS.C4.id || grid[i] === ELEMENTS.NITRO.id) {
+            grid[i] = ELEMENTS.FIRE.id;
+            life[i] = 20;
+        }
+    }
+};
+
+// Canvas Painting Interaction
+let isDrawing = false;
+function draw(e) {
+    const rect = canvas.getBoundingClientRect();
+    const cx = Math.floor((e.clientX - rect.left) * (WIDTH / rect.width));
+    const cy = Math.floor((e.clientY - rect.top) * (HEIGHT / rect.height));
+    const radius = parseInt(brushInput.value);
+
+    for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+            if (dx*dx + dy*dy <= radius*radius) {
+                const x = cx + dx;
+                const y = cy + dy;
+                if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
+                    const idx = y * WIDTH + x;
+                    const fill = (activeElement === ELEMENTS.ERASER.id) ? 0 : activeElement;
+                    grid[idx] = fill;
+                    life[idx] = 0;
+                    if (fill === ELEMENTS.FIRE.id) life[idx] = 12 + Math.random() * 8;
+                    if (fill === ELEMENTS.ELECTRIC.id) life[idx] = 5;
+                    if (fill === ELEMENTS.SMOKE.id || fill === ELEMENTS.STEAM.id) life[idx] = 40 + Math.random() * 20;
+                }
+            }
+        }
+    }
+}
+
+canvas.addEventListener('mousedown', (e) => { isDrawing = true; draw(e); });
+canvas.addEventListener('mousemove', (e) => { if (isDrawing) draw(e); });
+window.addEventListener('mouseup', () => isDrawing = false);
+
+// Cellular Physics Loop
+function update() {
+    const nextGrid = new Uint8Array(grid);
+    const gDir = (gravityMode === 'DOWN') ? 1 : (gravityMode === 'UP') ? -1 : 0;
+
+    for (let y = (gDir >= 0 ? HEIGHT - 1 : 0); (gDir >= 0 ? y >= 0 : y < HEIGHT); y -= (gDir >= 0 ? 1 : -1)) {
+        for (let x = 0; x < WIDTH; x++) {
+            const i = y * WIDTH + x;
+            const type = grid[i];
+
+            if (type === ELEMENTS.EMPTY.id || type === ELEMENTS.WALL.id || type === ELEMENTS.GLASS.id) continue;
+
+            const targetY = y + gDir;
+            const down = targetY * WIDTH + x;
+            const up = (y - 1) * WIDTH + x;
+            const left = y * WIDTH + (x - 1);
+            const right = y * WIDTH + (x + 1);
+            const downLeft = targetY * WIDTH + (x - 1);
+            const downRight = targetY * WIDTH + (x + 1);
+
+            // FAN (Generates upward air currents pushing gases & powders)
+            if (type === ELEMENTS.FAN.id) {
+                for (let reach = 1; reach <= 6; reach++) {
+                    const above = (y - reach) * WIDTH + x;
+                    if (above >= 0 && (grid[above] === ELEMENTS.SMOKE.id || grid[above] === ELEMENTS.STEAM.id || grid[above] === ELEMENTS.GAS.id || grid[above] === ELEMENTS.SAND.id)) {
+                        const targetAir = (y - reach - 1) * WIDTH + x;
+                        if (targetAir >= 0 && grid[targetAir] === ELEMENTS.EMPTY.id) {
+                            nextGrid[targetAir] = grid[above];
+                            nextGrid[above] = ELEMENTS.EMPTY.id;
+                        }
+                    }
+                }
+                continue;
+            }
+
+            // ELECTRICITY CONDUCTION & SEMICONDUCTORS
+            if (type === ELEMENTS.ELECTRIC.id) {
+                life[i]--;
+                if (life[i] <= 0) {
+                    nextGrid[i] = ELEMENTS.COPPER.id;
+                } else {
+                    [down, up, left, right].forEach(adj => {
+                        if (adj >= 0 && adj < WIDTH * HEIGHT) {
+                            if (grid[adj] === ELEMENTS.COPPER.id) {
+                                nextGrid[adj] = ELEMENTS.ELECTRIC.id;
+                                life[adj] = 4;
+                            } else if (grid[adj] === ELEMENTS.WATER.id) {
+                                nextGrid[adj] = ELEMENTS.FIRE.id; // Electrolysis / Shocking Water
+                                life[adj] = 10;
+                            } else if (grid[adj] === ELEMENTS.GUNPOWDER.id || grid[adj] === ELEMENTS.NITRO.id) {
+                                nextGrid[adj] = ELEMENTS.FIRE.id;
+                            }
+                        }
+                    });
+                }
+                continue;
+            }
+
+            // VOID & CLONE UTILITIES
+            if (type === ELEMENTS.VOID.id) {
+                [down, up, left, right].forEach(adj => {
+                    if (adj >= 0 && adj < WIDTH * HEIGHT && grid[adj] !== ELEMENTS.VOID.id) nextGrid[adj] = 0;
+                });
+                continue;
+            }
+
+            if (type === ELEMENTS.CLONE.id) {
+                if (cloneTypes[i] === 0) {
+                    [down, up, left, right].forEach(adj => {
+                        if (adj >= 0 && adj < WIDTH * HEIGHT && grid[adj] !== 0 && grid[adj] !== ELEMENTS.CLONE.id) {
+                            cloneTypes[i] = grid[adj];
+                        }
+                    });
+                } else {
+                    [down, left, right, up].forEach(adj => {
+                        if (adj >= 0 && adj < WIDTH * HEIGHT && grid[adj] === ELEMENTS.EMPTY.id) {
+                            nextGrid[adj] = cloneTypes[i];
+                        }
+                    });
+                }
+                continue;
+            }
+
+            // POWDERS (Sand, Gunpowder, Salt, Seed, Snow)
+            if (type === ELEMENTS.SAND.id || type === ELEMENTS.GUNPOWDER.id || type === ELEMENTS.SALT.id || type === ELEMENTS.SEED.id || type === ELEMENTS.SNOW.id) {
+                if (gDir !== 0 && targetY >= 0 && targetY < HEIGHT) {
+                    const target = grid[down];
+                    const isLiquid = target === ELEMENTS.WATER.id || target === ELEMENTS.OIL.id || target === ELEMENTS.ACID.id;
+                    if (target === ELEMENTS.EMPTY.id || isLiquid) {
+                        nextGrid[i] = target;
+                        nextGrid[down] = type;
+                    } else if (x > 0 && (grid[downLeft] === ELEMENTS.EMPTY.id || isLiquid)) {
+                        nextGrid[i] = grid[downLeft];
+                        nextGrid[downLeft] = type;
+                    } else if (x < WIDTH - 1 && (grid[downRight] === ELEMENTS.EMPTY.id || isLiquid)) {
+                        nextGrid[i] = grid[downRight];
+                        nextGrid[downRight] = type;
+                    }
+                }
+
+                // Plant Growth Mechanics
+                if (type === ELEMENTS.SEED.id) {
+                    [down, left, right].forEach(adj => {
+                        if (adj >= 0 && adj < WIDTH * HEIGHT && grid[adj] === ELEMENTS.WATER.id) {
+                            nextGrid[adj] = ELEMENTS.WOOD.id;
+                        }
+                    });
+                }
+                continue;
+            }
+
+            // LIQUIDS (Water, Oil, Acid, Lava, Nitro)
+            if (type === ELEMENTS.WATER.id || type === ELEMENTS.OIL.id || type === ELEMENTS.ACID.id || type === ELEMENTS.LAVA.id || type === ELEMENTS.NITRO.id) {
+                if (gDir !== 0 && targetY >= 0 && targetY < HEIGHT && grid[down] === ELEMENTS.EMPTY.id) {
+                    nextGrid[i] = ELEMENTS.EMPTY.id;
+                    nextGrid[down] = type;
+                } else {
+                    const dir = Math.random() < 0.5 ? -1 : 1;
+                    const side = y * WIDTH + (x + dir);
+                    if (x + dir >= 0 && x + dir < WIDTH && grid[side] === ELEMENTS.EMPTY.id) {
+                        nextGrid[i] = ELEMENTS.EMPTY.id;
+                        nextGrid[side] = type;
+                    }
+                }
+
+                // Chemical Reactions
+                if (type === ELEMENTS.ACID.id) {
+                    [down, left, right, up].forEach(adj => {
+                        if (adj >= 0 && adj < WIDTH * HEIGHT && grid[adj] !== ELEMENTS.EMPTY.id && grid[adj] !== ELEMENTS.GLASS.id && grid[adj] !== ELEMENTS.ACID.id) {
+                            if (Math.random() < 0.3) {
+                                nextGrid[adj] = ELEMENTS.EMPTY.id;
+                                nextGrid[i] = ELEMENTS.EMPTY.id;
+                            }
+                        }
+                    });
+                } else if (type === ELEMENTS.LAVA.id) {
+                    [down, left, right, up].forEach(adj => {
+                        if (adj >= 0 && adj < WIDTH * HEIGHT) {
+                            if (grid[adj] === ELEMENTS.WATER.id) {
+                                nextGrid[adj] = ELEMENTS.WALL.id;
+                                nextGrid[i] = ELEMENTS.STEAM.id;
+                                life[i] = 30;
+                            } else if (grid[adj] === ELEMENTS.WOOD.id || grid[adj] === ELEMENTS.OIL.id || grid[adj] === ELEMENTS.NITRO.id) {
+                                nextGrid[adj] = ELEMENTS.FIRE.id;
+                            }
+                        }
+                    });
+                }
+                continue;
+            }
+
+            // GASES (Smoke, Gas, Steam)
+            if (type === ELEMENTS.SMOKE.id || type === ELEMENTS.GAS.id || type === ELEMENTS.STEAM.id) {
+                life[i]--;
+                if (life[i] <= 0 && type !== ELEMENTS.GAS.id) {
+                    nextGrid[i] = (type === ELEMENTS.STEAM.id && Math.random() < 0.3) ? ELEMENTS.WATER.id : ELEMENTS.EMPTY.id;
+                } else if (y > 0) {
+                    const dir = Math.random() < 0.5 ? -1 : 1;
+                    if (grid[up] === ELEMENTS.EMPTY.id) {
+                        nextGrid[i] = ELEMENTS.EMPTY.id;
+                        nextGrid[up] = type;
+                        life[up] = life[i];
+                    }
+                }
+                continue;
+            }
+
+            // FIRE & COMBUSTION
+            if (type === ELEMENTS.FIRE.id) {
+                life[i]--;
+                if (life[i] <= 0) {
+                    nextGrid[i] = (Math.random() < 0.2) ? ELEMENTS.SMOKE.id : ELEMENTS.EMPTY.id;
+                    if (nextGrid[i] === ELEMENTS.SMOKE.id) life[i] = 30;
+                } else {
+                    [down, up, left, right].forEach(adj => {
+                        if (adj >= 0 && adj < WIDTH * HEIGHT) {
+                            const target = grid[adj];
+                            if (target === ELEMENTS.WOOD.id || target === ELEMENTS.OIL.id || target === ELEMENTS.GAS.id) {
+                                nextGrid[adj] = ELEMENTS.FIRE.id;
+                                life[adj] = 18;
+                            } else if (target === ELEMENTS.GUNPOWDER.id || target === ELEMENTS.C4.id || target === ELEMENTS.NITRO.id) {
+                                const radius = (target === ELEMENTS.NITRO.id) ? 10 : (target === ELEMENTS.C4.id) ? 7 : 4;
+                                const centerY = Math.floor(adj / WIDTH);
+                                const centerX = adj % WIDTH;
+                                for (let ex = -radius; ex <= radius; ex++) {
+                                    for (let ey = -radius; ey <= radius; ey++) {
+                                        const eIdx = (centerY + ey) * WIDTH + (centerX + ex);
+                                        if (eIdx >= 0 && eIdx < WIDTH * HEIGHT && grid[eIdx] !== ELEMENTS.WALL.id) {
+                                            nextGrid[eIdx] = ELEMENTS.FIRE.id;
+                                            life[eIdx] = 15;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    grid = nextGrid;
+}
+
+// Rendering Engine
+function render() {
+    const data = imgData.data;
+    const colorMap = Object.values(ELEMENTS).reduce((acc, el) => {
+        acc[el.id] = el.color;
+        return acc;
+    }, {});
+
+    for (let i = 0; i < grid.length; i++) {
+        const type = grid[i];
+        const color = colorMap[type] || colorMap[0];
+        const pixelIdx = i * 4;
+
+        data[pixelIdx]     = color[0];
+        data[pixelIdx + 1] = color[1];
+        data[pixelIdx + 2] = color[2];
+        data[pixelIdx + 3] = color[3];
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+}
+
+// Main Frame Loop
+let lastTime = performance.now();
+let frameCount = 0;
+function loop(now) {
+    update();
+    render();
+
+    frameCount++;
+    if (now - lastTime >= 1000) {
+        document.getElementById('fps').textContent = 'FPS: ' + frameCount;
+        frameCount = 0;
+        lastTime = now;
+    }
+
+    requestAnimationFrame(loop);
+}
+
+loop(performance.now());
+</script>
+</body>
+</html>

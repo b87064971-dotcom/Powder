@@ -2,90 +2,141 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sand Saga - Master Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Sand Saga - Mobile & QoL Edition</title>
     <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
         body {
-            background-color: #0f0f0f;
+            background-color: #121212;
             color: #fff;
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             margin: 0;
             padding: 10px;
+            overflow-x: hidden;
         }
-        h1 { margin: 5px 0; font-size: 24px; }
+        h1 {
+            margin: 5px 0 10px 0;
+            font-size: 1.4rem;
+        }
+        .canvas-container {
+            position: relative;
+            touch-action: none; /* Prevents scroll when drawing */
+        }
         canvas {
-            border: 2px solid #444;
+            border: 2px solid #333;
             background-color: #000;
             cursor: crosshair;
             image-rendering: pixelated;
-            margin-bottom: 10px;
+            max-width: 100%;
+            height: auto;
+            display: block;
         }
-        .panel {
+        
+        /* Mobile Control Bar */
+        .qol-bar {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 600px;
             background: #1e1e1e;
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
-            max-width: 700px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: center;
         }
+        .qol-bar label {
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        
+        /* Material Buttons Container */
         .controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            justify-content: center;
-            max-height: 150px;
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 6px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 180px;
             overflow-y: auto;
-            padding: 5px;
-            border: 1px solid #333;
+            padding: 6px;
+            background: #1e1e1e;
+            border-radius: 8px;
         }
-        .toolbar-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+        
         button {
-            padding: 6px 10px;
+            padding: 10px 6px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
             color: white;
-            font-size: 11px;
-            transition: transform 0.1s, opacity 0.2s;
+            font-size: 12px;
+            touch-action: manipulation;
         }
-        button:hover { opacity: 0.85; }
-        button:active { transform: scale(0.95); }
-        button.active { outline: 2px solid #fff; z-index: 10; }
+        button:active { opacity: 0.7; }
+        button.active { outline: 3px solid #fff; }
 
-        .btn-gravity { background-color: #4682b4; }
-        .btn-clear { background-color: #b22222; }
-        .btn-eraser { background-color: #555; }
+        /* QoL Control Styles */
+        .btn-qol { background-color: #333; }
+        .btn-qol.active { background-color: #007acc; }
+
+        /* Material Colors */
+        .btn-sand { background-color: #e0c068; color: #000; }
+        .btn-water { background-color: #4080ff; }
+        .btn-wood { background-color: #8b5a2b; }
+        .btn-fire { background-color: #ff4500; }
+        .btn-acid { background-color: #32cd32; color: #000; }
+        .btn-oil { background-color: #554433; }
+        .btn-nitro { background-color: #ff0055; }
+        .btn-wall { background-color: #777777; }
+        .btn-eraser { background-color: #444; }
+        .btn-clear { background-color: #a00; }
+
+        /* Custom Slider for Touch */
+        input[type=range] {
+            width: 80px;
+        }
     </style>
 </head>
 <body>
 
-    <h1>Sand Saga Master Edition</h1>
-    <canvas id="canvas" width="200" height="150" style="width: 600px; height: 450px;"></canvas>
+    <h1>Sand Saga Simulator</h1>
 
-    <div class="panel">
-        <div class="toolbar-row">
-            <strong>Gravity:</strong>
-            <button class="btn-gravity active" onclick="setGravity(0, 1, this)">Down</button>
-            <button class="btn-gravity" onclick="setGravity(0, -1, this)">Up</button>
-            <button class="btn-gravity" onclick="setGravity(-1, 0, this)">Left</button>
-            <button class="btn-gravity" onclick="setGravity(1, 0, this)">Right</button>
-            <button class="btn-eraser" onclick="selectElement('empty', this)">Eraser</button>
-            <button class="btn-clear" onclick="clearCanvas()">Clear All</button>
-        </div>
-        <div class="controls" id="btn-container"></div>
+    <div class="canvas-container">
+        <canvas id="canvas" width="200" height="150" style="width: 600px; height: 450px;"></canvas>
+    </div>
+
+    <!-- Pause & QoL Toolbar -->
+    <div class="qol-bar">
+        <button id="btn-pause" class="btn-qol" onclick="togglePause()">⏸️ Pause</button>
+        <button id="btn-step" class="btn-qol" onclick="stepFrame()" disabled>⏭️ Step</button>
+        <label for="brush-size">Size: <span id="size-val">2</span></label>
+        <input type="range" id="brush-size" min="1" max="10" value="2" oninput="updateBrushSize(this.value)">
+        <button class="btn-clear" onclick="clearCanvas()">🗑️ Clear</button>
+    </div>
+
+    <!-- Material Palette -->
+    <div class="controls" id="btn-container">
+        <button class="btn-sand active" onclick="selectElement('sand', this)">Sand</button>
+        <button class="btn-water" onclick="selectElement('water', this)">Water</button>
+        <button class="btn-wood" onclick="selectElement('wood', this)">Wood</button>
+        <button class="btn-fire" onclick="selectElement('fire', this)">Fire</button>
+        <button class="btn-acid" onclick="selectElement('acid', this)">Acid</button>
+        <button class="btn-oil" onclick="selectElement('oil', this)">Oil</button>
+        <button class="btn-nitro" onclick="selectElement('nitro', this)">Nitro</button>
+        <button class="btn-wall" onclick="selectElement('wall', this)">Wall</button>
+        <button class="btn-eraser" onclick="selectElement('empty', this)">Eraser</button>
     </div>
 
     <script>
@@ -94,97 +145,90 @@
         const width = canvas.width;
         const height = canvas.height;
 
-        let grid = createGrid();
+        let grid = Array(width * height).fill(0);
         let currentElement = 'sand';
-        let isMouseDown = false;
-        let gravity = { x: 0, y: 1 }; // Default down
+        let brushSize = 2;
+        let isPaused = false;
+        let stepRequested = false;
+        let isDrawing = false;
 
         const ELEMENTS = {
-            empty:          { id: 0,  name: 'Empty',      color: [0, 0, 0], type: 'empty' },
-            sand:           { id: 1,  name: 'Sand',       color: [224, 192, 104], type: 'powder' },
-            water:          { id: 2,  name: 'Water',      color: [64, 128, 255],  type: 'liquid', density: 1 },
-            fire:           { id: 3,  name: 'Fire',       color: [255, 69, 0],    type: 'gas' },
-            acid:           { id: 4,  name: 'Acid',       color: [50, 255, 50],   type: 'liquid', density: 2 },
-            belt_left:      { id: 5,  name: 'Belt Left',  color: [100, 100, 100], type: 'machine' },
-            belt_right:     { id: 6,  name: 'Belt Right', color: [120, 120, 120], type: 'machine' },
-            birds:          { id: 7,  name: 'Birds',      color: [255, 255, 0],   type: 'creature' },
-            coal:           { id: 8,  name: 'Coal',       color: [40, 40, 40],    type: 'powder' },
-            drain_pipe:     { id: 9,  name: 'Drain Pipe', color: [70, 130, 180],  type: 'machine' },
-            dynamite:       { id: 10, name: 'Dynamite',   color: [200, 30, 30],   type: 'solid' },
-            extinguisher:   { id: 11, name: 'Extinguisher',color:[200, 200, 200],type: 'gas' },
-            gravel:         { id: 12, name: 'Gravel',     color: [128, 128, 128], type: 'powder' },
-            grinder:        { id: 13, name: 'Grinder',    color: [112, 128, 144], type: 'machine' },
-            gunpowder:      { id: 14, name: 'Gunpowder',  color: [75, 75, 75],    type: 'powder' },
-            human:          { id: 15, name: 'Human',      color: [255, 204, 153], type: 'creature' },
-            metal:          { id: 16, name: 'Metal',      color: [192, 192, 192], type: 'solid' },
-            molten_metal:   { id: 17, name: 'Molten Metal',color:[255, 140, 0],   type: 'liquid', density: 5 },
-            napalm:         { id: 18, name: 'Napalm',     color: [204, 85, 0],    type: 'liquid', density: 1.5 },
-            nitro:          { id: 19, name: 'Nitro',      color: [238, 232, 170], type: 'liquid', density: 2.5 },
-            oil:            { id: 20, name: 'Oil',        color: [139, 69, 19],   type: 'liquid', density: 0.8 },
-            rock:           { id: 21, name: 'Rock',       color: [105, 105, 105], type: 'solid' },
-            soil:           { id: 22, name: 'Soil',       color: [121, 85, 41],   type: 'powder' },
-            steam:          { id: 23, name: 'Steam',      color: [211, 211, 211], type: 'gas' },
-            supply_pipe:    { id: 24, name: 'Supply Pipe',color: [218, 165, 32],  type: 'machine' },
-            thermite:       { id: 25, name: 'Thermite',   color: [184, 134, 11],  type: 'powder' },
-            wall:           { id: 26, name: 'Wall',       color: [60, 60, 60],    type: 'immovable' }
+            empty: { id: 0, color: [0, 0, 0] },
+            sand:  { id: 1, color: [224, 192, 104] },
+            water: { id: 2, color: [64, 128, 255] },
+            wood:  { id: 3, color: [139, 90, 43] },
+            fire:  { id: 4, color: [255, 69, 0] },
+            acid:  { id: 5, color: [50, 205, 50] },
+            oil:   { id: 6, color: [85, 68, 51] },
+            nitro: { id: 7, color: [255, 0, 85] },
+            wall:  { id: 8, color: [119, 119, 119] }
         };
 
-        // Populate dynamic element buttons
-        const btnContainer = document.getElementById('btn-container');
-        Object.keys(ELEMENTS).forEach(key => {
-            if (key === 'empty') return;
-            const el = ELEMENTS[key];
-            const btn = document.createElement('button');
-            btn.innerText = el.name;
-            btn.style.backgroundColor = `rgb(${el.color.join(',')})`;
-            if (['sand', 'nitro', 'human', 'birds', 'extinguisher', 'supply_pipe'].includes(key)) {
-                btn.style.color = '#000';
-            }
-            btn.onclick = () => selectElement(key, btn);
-            if (key === 'sand') btn.classList.add('active');
-            btnContainer.appendChild(btn);
-        });
-
-        function createGrid() {
-            return Array(width * height).fill(0);
-        }
-
-        function getIndex(x, y) {
-            return y * width + x;
-        }
+        function getIndex(x, y) { return y * width + x; }
 
         function selectElement(type, btn) {
             currentElement = type;
-            document.querySelectorAll('#btn-container button, .btn-eraser').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#btn-container button').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
 
-        function setGravity(gx, gy, btn) {
-            gravity = { x: gx, y: gy };
-            document.querySelectorAll('.btn-gravity').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+        /* QoL Pause Controls */
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('btn-pause');
+            const stepBtn = document.getElementById('btn-step');
+            
+            if (isPaused) {
+                pauseBtn.innerText = '▶️ Play';
+                pauseBtn.classList.add('active');
+                stepBtn.disabled = false;
+            } else {
+                pauseBtn.innerText = '⏸️ Pause';
+                pauseBtn.classList.remove('active');
+                stepBtn.disabled = true;
+            }
+        }
+
+        function stepFrame() {
+            if (isPaused) stepRequested = true;
+        }
+
+        function updateBrushSize(val) {
+            brushSize = parseInt(val, 10);
+            document.getElementById('size-val').innerText = brushSize;
         }
 
         function clearCanvas() {
-            grid = createGrid();
+            grid = Array(width * height).fill(0);
         }
 
-        canvas.addEventListener('mousedown', (e) => { isMouseDown = true; addParticle(e); });
-        canvas.addEventListener('mouseup', () => isMouseDown = false);
-        canvas.addEventListener('mouseleave', () => isMouseDown = false);
-        canvas.addEventListener('mousemove', (e) => { if (isMouseDown) addParticle(e); });
+        /* Touch & Mouse Event Handling for Painting */
+        function handlePointerStart(e) {
+            isDrawing = true;
+            paint(e);
+        }
 
-        function addParticle(e) {
+        function handlePointerMove(e) {
+            if (isDrawing) paint(e);
+        }
+
+        function handlePointerEnd() {
+            isDrawing = false;
+        }
+
+        function paint(e) {
             const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
             
-            const mouseX = Math.floor((e.clientX - rect.left) * scaleX);
-            const mouseY = Math.floor((e.clientY - rect.top) * scaleY);
+            const mouseX = Math.floor((clientX - rect.left) * scaleX);
+            const mouseY = Math.floor((clientY - rect.top) * scaleY);
 
-            const brushSize = 2;
-            for (let dx = -brushSize; dx <= brushSize; dx++) {
-                for (let dy = -brushSize; dy <= brushSize; dy++) {
+            for (let dx = -brushSize + 1; dx < brushSize; dx++) {
+                for (let dy = -brushSize + 1; dy < brushSize; dy++) {
                     const x = mouseX + dx;
                     const y = mouseY + dy;
                     if (x >= 0 && x < width && y >= 0 && y < height) {
@@ -194,273 +238,86 @@
             }
         }
 
-        // Explosion mechanic trigger
-        function explode(cx, cy, radius) {
-            for (let dy = -radius; dy <= radius; dy++) {
-                for (let dx = -radius; dx <= radius; dx++) {
-                    const nx = cx + dx;
-                    const ny = cy + dy;
-                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                        if (dx*dx + dy*dy <= radius*radius) {
-                            const idx = getIndex(nx, ny);
-                            if (grid[idx] !== ELEMENTS.wall.id) {
-                                grid[idx] = Math.random() < 0.6 ? ELEMENTS.fire.id : 0;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // Attach both Touch and Mouse listeners
+        canvas.addEventListener('mousedown', handlePointerStart);
+        canvas.addEventListener('mousemove', handlePointerMove);
+        window.addEventListener('mouseup', handlePointerEnd);
 
+        canvas.addEventListener('touchstart', handlePointerStart, { passive: false });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // Prevents touch scrolling on canvas area
+            handlePointerMove(e);
+        }, { passive: false });
+        window.addEventListener('touchend', handlePointerEnd);
+
+        /* Simulation Logic */
         function update() {
             let nextGrid = [...grid];
-            let processed = new Uint8Array(width * height);
 
-            for (let y = 0; y < height; y++) {
-                // Loop order adaptability based on gravity vector
-                let scanY = (gravity.y === 1) ? height - 1 - y : y;
+            for (let y = height - 1; y >= 0; y--) {
                 for (let x = 0; x < width; x++) {
-                    let scanX = (gravity.x === 1) ? width - 1 - x : x;
-                    const idx = getIndex(scanX, scanY);
-                    
-                    if (processed[idx]) continue;
-                    const typeId = grid[idx];
-                    if (typeId === 0) continue;
+                    const idx = getIndex(x, y);
+                    const type = grid[idx];
 
-                    const element = Object.values(ELEMENTS).find(el => el.id === typeId);
-                    if (!element) continue;
+                    if (type === 0 || type === 3 || type === 8) continue; // Static
 
-                    // 1. IMMOVABLE & SOLIDS (Wall, Metal, Rock)
-                    if (element.type === 'immovable' || element.type === 'solid') {
-                        // Metal melts into molten metal near fire or thermite
-                        if (typeId === ELEMENTS.metal.id) {
-                            checkNeighbors(scanX, scanY, (nIdx) => {
-                                if (grid[nIdx] === ELEMENTS.fire.id || grid[nIdx] === ELEMENTS.thermite.id) {
-                                    nextGrid[idx] = ELEMENTS.molten_metal.id;
-                                }
-                            });
-                        }
-                        continue;
-                    }
-
-                    // 2. MACHINES (Belts, Pipes, Grinder)
-                    if (typeId === ELEMENTS.belt_left.id || typeId === ELEMENTS.belt_right.id) {
-                        const dir = (typeId === ELEMENTS.belt_left.id) ? -1 : 1;
-                        const targetX = scanX + dir;
-                        if (targetX >= 0 && targetX < width) {
-                            // Check item directly above belt
-                            const aboveIdx = getIndex(scanX, scanY - 1);
-                            if (grid[aboveIdx] !== 0 && grid[aboveIdx] !== ELEMENTS.wall.id) {
-                                const sideIdx = getIndex(targetX, scanY - 1);
-                                if (grid[sideIdx] === 0) {
-                                    nextGrid[sideIdx] = grid[aboveIdx];
-                                    nextGrid[aboveIdx] = 0;
-                                    processed[sideIdx] = 1;
-                                }
-                            }
-                        }
-                        continue;
-                    }
-
-                    if (typeId === ELEMENTS.drain_pipe.id) {
-                        checkNeighbors(scanX, scanY, (nIdx) => {
-                            const nType = grid[nIdx];
-                            if (nType && nType !== ELEMENTS.wall.id && nType !== ELEMENTS.drain_pipe.id && nType !== ELEMENTS.supply_pipe.id) {
-                                nextGrid[nIdx] = 0;
-                            }
-                        });
-                        continue;
-                    }
-
-                    if (typeId === ELEMENTS.supply_pipe.id) {
-                        const dropIdx = getIndex(scanX, scanY + 1);
-                        if (dropIdx < width * height && grid[dropIdx] === 0) {
-                            nextGrid[dropIdx] = ELEMENTS.water.id; // Default supply water
-                        }
-                        continue;
-                    }
-
-                    if (typeId === ELEMENTS.grinder.id) {
-                        checkNeighbors(scanX, scanY, (nIdx) => {
-                            if (grid[nIdx] !== 0 && grid[nIdx] !== ELEMENTS.grinder.id && grid[nIdx] !== ELEMENTS.wall.id) {
-                                nextGrid[nIdx] = ELEMENTS.sand.id; // Grinds anything into sand dust
-                            }
-                        });
-                        continue;
-                    }
-
-                    // 3. POWDERS (Sand, Coal, Gravel, Gunpowder, Soil, Thermite)
-                    if (element.type === 'powder') {
-                        const fallX = scanX + gravity.x;
-                        const fallY = scanY + gravity.y;
-                        const fallIdx = (fallX >= 0 && fallX < width && fallY >= 0 && fallY < height) ? getIndex(fallX, fallY) : -1;
-
-                        // Gunpowder/Dynamite explosion checks
-                        if (typeId === ELEMENTS.gunpowder.id || typeId === ELEMENTS.dynamite.id) {
-                            checkNeighbors(scanX, scanY, (nIdx) => {
-                                if (grid[nIdx] === ELEMENTS.fire.id) {
-                                    explode(scanX, scanY, typeId === ELEMENTS.dynamite.id ? 15 : 8);
-                                }
-                            });
-                        }
-
-                        if (fallIdx !== -1 && (grid[fallIdx] === 0 || ELEMENTS[Object.keys(ELEMENTS).find(k => ELEMENTS[k].id === grid[fallIdx])]?.type === 'liquid')) {
-                            nextGrid[idx] = grid[fallIdx];
-                            nextGrid[fallIdx] = typeId;
-                            processed[fallIdx] = 1;
-                        } else {
-                            // Slide diagonally
-                            const diag1X = scanX - 1;
-                            const diag2X = scanX + 1;
-                            const slideY = scanY + gravity.y;
-                            
-                            let targetSlideIdx = -1;
-                            if (diag1X >= 0 && slideY >= 0 && slideY < height && grid[getIndex(diag1X, slideY)] === 0) {
-                                targetSlideIdx = getIndex(diag1X, slideY);
-                            } else if (diag2X < width && slideY >= 0 && slideY < height && grid[getIndex(diag2X, slideY)] === 0) {
-                                targetSlideIdx = getIndex(diag2X, slideY);
-                            }
-
-                            if (targetSlideIdx !== -1) {
-                                nextGrid[idx] = grid[targetSlideIdx];
-                                nextGrid[targetSlideIdx] = typeId;
-                                processed[targetSlideIdx] = 1;
+                    // Sand Logic
+                    if (type === 1) {
+                        const below = getIndex(x, y + 1);
+                        if (y + 1 < height) {
+                            if (grid[below] === 0 || grid[below] === 2) {
+                                nextGrid[idx] = grid[below];
+                                nextGrid[below] = 1;
                             }
                         }
                     }
-
-                    // 4. LIQUIDS (Water, Acid, Napalm, Nitro, Oil, Molten Metal) + Pressure Physics
-                    else if (element.type === 'liquid') {
-                        // Nitro detonation check
-                        if (typeId === ELEMENTS.nitro.id) {
-                            checkNeighbors(scanX, scanY, (nIdx) => {
-                                if (grid[nIdx] === ELEMENTS.fire.id || grid[nIdx] === ELEMENTS.acid.id) {
-                                    explode(scanX, scanY, 12);
-                                }
-                            });
-                        }
-
-                        // Acid corrosive behavior
-                        if (typeId === ELEMENTS.acid.id) {
-                            checkNeighbors(scanX, scanY, (nIdx) => {
-                                if (grid[nIdx] !== 0 && grid[nIdx] !== ELEMENTS.acid.id && grid[nIdx] !== ELEMENTS.wall.id) {
-                                    nextGrid[nIdx] = 0;
-                                    nextGrid[idx] = 0; // Acid neutralizes
-                                }
-                            });
-                        }
-
-                        const fallX = scanX + gravity.x;
-                        const fallY = scanY + gravity.y;
-                        const fallIdx = (fallX >= 0 && fallX < width && fallY >= 0 && fallY < height) ? getIndex(fallX, fallY) : -1;
-
-                        if (fallIdx !== -1 && grid[fallIdx] === 0) {
+                    // Liquid Logic (Water, Acid, Oil, Nitro)
+                    else if (type === 2 || type === 5 || type === 6 || type === 7) {
+                        const below = getIndex(x, y + 1);
+                        if (y + 1 < height && grid[below] === 0) {
                             nextGrid[idx] = 0;
-                            nextGrid[fallIdx] = typeId;
-                            processed[fallIdx] = 1;
+                            nextGrid[below] = type;
                         } else {
-                            // Fluid pressure dispersion (spread sideways or upward if compressed)
-                            const leftIdx = getIndex(scanX - 1, scanY);
-                            const rightIdx = getIndex(scanX + 1, scanY);
-                            let moved = false;
-
                             let dir = Math.random() < 0.5 ? -1 : 1;
-                            let sideIdx = getIndex(scanX + dir, scanY);
-                            let oppSideIdx = getIndex(scanX - dir, scanY);
-
-                            if (scanX + dir >= 0 && scanX + dir < width && grid[sideIdx] === 0) {
+                            let sideIdx = getIndex(x + dir, y);
+                            if (x + dir >= 0 && x + dir < width && grid[sideIdx] === 0) {
                                 nextGrid[idx] = 0;
-                                nextGrid[sideIdx] = typeId;
-                                processed[sideIdx] = 1;
-                                moved = true;
-                            } else if (scanX - dir >= 0 && scanX - dir < width && grid[oppSideIdx] === 0) {
-                                nextGrid[idx] = 0;
-                                nextGrid[oppSideIdx] = typeId;
-                                processed[oppSideIdx] = 1;
-                                moved = true;
+                                nextGrid[sideIdx] = type;
                             }
                         }
-                    }
 
-                    // 5. GASES / EFFECTS (Fire, Steam, Extinguisher)
-                    else if (element.type === 'gas') {
-                        if (typeId === ELEMENTS.fire.id) {
-                            if (Math.random() < 0.2) {
-                                nextGrid[idx] = 0;
-                                continue;
-                            }
-                            // Spread fire
-                            checkNeighbors(scanX, scanY, (nIdx) => {
-                                const nType = grid[nIdx];
-                                if (nType === ELEMENTS.coal.id || nType === ELEMENTS.napalm.id) {
-                                    nextGrid[nIdx] = ELEMENTS.fire.id;
+                        // Acid Interaction
+                        if (type === 5) {
+                            checkNeighbors(x, y, (nIdx) => {
+                                if (grid[nIdx] !== 0 && grid[nIdx] !== 5 && Math.random() < 0.3) {
+                                    nextGrid[nIdx] = 0;
+                                    nextGrid[idx] = 0;
                                 }
                             });
                         }
-
-                        // Gases rise against gravity
-                        const riseX = scanX - gravity.x;
-                        const riseY = scanY - gravity.y;
-                        const riseIdx = (riseX >= 0 && riseX < width && riseY >= 0 && riseY < height) ? getIndex(riseX, riseY) : -1;
-
-                        if (riseIdx !== -1 && grid[riseIdx] === 0) {
-                            nextGrid[idx] = 0;
-                            nextGrid[riseIdx] = typeId;
-                            processed[riseIdx] = 1;
-                        }
                     }
-
-                    // 6. CREATURES (Humans, Birds)
-                    else if (element.type === 'creature') {
-                        // Gravity drop
-                        const fallX = scanX + gravity.x;
-                        const fallY = scanY + gravity.y;
-                        const fallIdx = (fallX >= 0 && fallX < width && fallY >= 0 && fallY < height) ? getIndex(fallX, fallY) : -1;
-
-                        if (fallIdx !== -1 && grid[fallIdx] === 0) {
-                            nextGrid[idx] = 0;
-                            nextGrid[fallIdx] = typeId;
-                            processed[fallIdx] = 1;
-                        } else if (typeId === ELEMENTS.human.id) {
-                            // Human walks randomly left/right
-                            let walkDir = Math.random() < 0.5 ? -1 : 1;
-                            let targetX = scanX + walkDir;
-                            if (targetX >= 0 && targetX < width && grid[getIndex(targetX, scanY)] === 0) {
-                                nextGrid[idx] = 0;
-                                nextGrid[getIndex(targetX, scanY)] = typeId;
-                                processed[getIndex(targetX, scanY)] = 1;
-                            }
-                        } else if (typeId === ELEMENTS.birds.id) {
-                            // Birds fly around randomly
-                            let flyX = scanX + (Math.random() < 0.5 ? -1 : 1);
-                            let flyY = scanY + (Math.random() < 0.5 ? -1 : 1);
-                            if (flyX >= 0 && flyX < width && flyY >= 0 && flyY < height && grid[getIndex(flyX, flyY)] === 0) {
-                                nextGrid[idx] = 0;
-                                nextGrid[getIndex(flyX, flyY)] = typeId;
-                                processed[getIndex(flyX, flyY)] = 1;
-                            }
-                        }
-
-                        // Kill creatures in fire or acid
-                        checkNeighbors(scanX, scanY, (nIdx) => {
-                            if (grid[nIdx] === ELEMENTS.fire.id || grid[nIdx] === ELEMENTS.acid.id) {
-                                nextGrid[idx] = 0;
+                    // Fire Logic
+                    else if (type === 4) {
+                        if (Math.random() < 0.2) nextGrid[idx] = 0;
+                        checkNeighbors(x, y, (nIdx) => {
+                            if (grid[nIdx] === 3 || grid[nIdx] === 6 || grid[nIdx] === 7) {
+                                nextGrid[nIdx] = 4; // Ignite wood, oil, or nitro
                             }
                         });
                     }
                 }
             }
-
             grid = nextGrid;
         }
 
         function checkNeighbors(x, y, callback) {
-            const offsets = [{x:0, y:-1}, {x:0, y:1}, {x:-1, y:0}, {x:1, y:0}, {x:-1, y:-1}, {x:1, y:1}];
-            offsets.forEach(off => {
-                const nx = x + off.x;
-                const ny = y + off.y;
-                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                    callback(getIndex(nx, ny));
+            const neighbors = [
+                {x: x, y: y - 1}, {x: x, y: y + 1},
+                {x: x - 1, y: y}, {x: x + 1, y: y}
+            ];
+            neighbors.forEach(n => {
+                if (n.x >= 0 && n.x < width && n.y >= 0 && n.y < height) {
+                    callback(getIndex(n.x, n.y));
                 }
             });
         }
@@ -470,17 +327,18 @@
             const data = imgData.data;
 
             for (let i = 0; i < grid.length; i++) {
-                const typeId = grid[i];
+                const type = grid[i];
                 let color = [0, 0, 0];
 
-                if (typeId !== 0) {
-                    const el = Object.values(ELEMENTS).find(e => e.id === typeId);
-                    if (el) {
-                        color = [...el.color];
-                        if (typeId === ELEMENTS.fire.id) {
-                            color[1] = Math.floor(Math.random() * 150); // flickering fire
-                        }
-                    }
+                switch(type) {
+                    case 1: color = ELEMENTS.sand.color; break;
+                    case 2: color = ELEMENTS.water.color; break;
+                    case 3: color = ELEMENTS.wood.color; break;
+                    case 4: color = [255, Math.floor(Math.random() * 180), 0]; break;
+                    case 5: color = ELEMENTS.acid.color; break;
+                    case 6: color = ELEMENTS.oil.color; break;
+                    case 7: color = ELEMENTS.nitro.color; break;
+                    case 8: color = ELEMENTS.wall.color; break;
                 }
 
                 const pixelIdx = i * 4;
@@ -494,7 +352,10 @@
         }
 
         function loop() {
-            update();
+            if (!isPaused || stepRequested) {
+                update();
+                stepRequested = false;
+            }
             draw();
             requestAnimationFrame(loop);
         }

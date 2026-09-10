@@ -2,175 +2,642 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Sand Saga - Mobile & QoL Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Arcade Sandbox Hub</title>
     <style>
         * {
             box-sizing: border-box;
-            user-select: none;
+            -webkit-touch-callout: none;
             -webkit-user-select: none;
-            touch-action: manipulation;
+            user-select: none;
         }
         body {
-            background-color: #121212;
-            color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            background: #0d0d11;
+            color: #eceff4;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 0;
-            padding: 10px;
-            overflow-x: hidden;
+            min-height: 100vh;
+            padding: 12px;
+            touch-action: none;
+            overflow: hidden;
+        }
+        /* Navigation Header */
+        header {
+            width: 100%;
+            max-width: 840px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
         }
         h1 {
-            margin: 5px 0 10px 0;
-            font-size: 1.4rem;
+            margin: 0;
+            color: #88c0d0;
+            font-size: 22px;
+            letter-spacing: 1px;
         }
-        .canvas-container {
-            position: relative;
-            touch-action: none; /* Prevents scroll when drawing */
-        }
-        canvas {
-            border: 2px solid #333;
-            background-color: #000;
-            cursor: crosshair;
-            image-rendering: pixelated;
-            max-width: 100%;
-            height: auto;
-            display: block;
-        }
-        
-        /* Mobile Control Bar */
-        .qol-bar {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            width: 100%;
-            max-width: 600px;
-            background: #1e1e1e;
-            padding: 8px;
-            border-radius: 8px;
-        }
-        .qol-bar label {
-            font-size: 0.85rem;
-            font-weight: bold;
-        }
-        
-        /* Material Buttons Container */
-        .controls {
-            margin-top: 10px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 6px;
-            width: 100%;
-            max-width: 600px;
-            max-height: 180px;
-            overflow-y: auto;
-            padding: 6px;
-            background: #1e1e1e;
-            border-radius: 8px;
-        }
-        
-        button {
-            padding: 10px 6px;
-            border: none;
+        .nav-btn {
+            background: #4c566a;
+            color: #fff;
+            border: 1px solid #d8dee9;
+            padding: 6px 14px;
             border-radius: 6px;
             cursor: pointer;
+            font-size: 13px;
             font-weight: bold;
-            color: white;
+        }
+        .nav-btn:active { background: #5e81ac; }
+
+        /* Screens */
+        .screen { display: none; width: 100%; max-width: 840px; }
+        .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+        /* Home Screen Hub */
+        #home-screen {
+            background: #181920;
+            border: 1px solid #2e3440;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .hub-title { font-size: 28px; color: #88c0d0; margin-bottom: 8px; }
+        .hub-subtitle { color: #d8dee9; font-size: 14px; margin-bottom: 30px; }
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            width: 100%;
+        }
+        .game-card {
+            background: #2e3440;
+            border: 2px solid #434c5e;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .game-card:active { transform: scale(0.97); }
+        .game-card:hover { border-color: #88c0d0; }
+        .game-card h3 { margin: 10px 0 6px 0; color: #a3be8c; font-size: 18px; }
+        .game-card p { margin: 0; font-size: 12px; color: #d8dee9; }
+        .game-icon { font-size: 38px; }
+
+        /* Canvas Styles */
+        #canvas-container {
+            position: relative;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.9);
+            border-radius: 6px;
+            overflow: hidden;
+            touch-action: none;
+        }
+        canvas {
+            background: #000;
+            cursor: crosshair;
+            display: block;
+            image-rendering: pixelated;
+            touch-action: none;
+        }
+
+        /* Control Panels */
+        .control-panel {
+            margin-top: 8px;
+            width: 100%;
+            background: #181920;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #2e3440;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 35vh;
+            overflow-y: auto;
+        }
+        .settings {
+            display: flex;
+            gap: 10px;
+            align-items: center;
             font-size: 12px;
+            border-bottom: 1px solid #2e3440;
+            padding-bottom: 6px;
+            flex-wrap: wrap;
+        }
+        .categories { display: flex; flex-direction: column; gap: 5px; }
+        .cat-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        .cat-label {
+            font-size: 10px;
+            font-weight: bold;
+            color: #d8dee9;
+            width: 75px;
+            text-transform: uppercase;
+        }
+        button {
+            background: #2e3440;
+            color: #e5e9f0;
+            border: 1px solid #4c566a;
+            padding: 6px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
             touch-action: manipulation;
         }
-        button:active { opacity: 0.7; }
-        button.active { outline: 3px solid #fff; }
-
-        /* QoL Control Styles */
-        .btn-qol { background-color: #333; }
-        .btn-qol.active { background-color: #007acc; }
-
-        /* Material Colors */
-        .btn-sand { background-color: #e0c068; color: #000; }
-        .btn-water { background-color: #4080ff; }
-        .btn-wood { background-color: #8b5a2b; }
-        .btn-fire { background-color: #ff4500; }
-        .btn-acid { background-color: #32cd32; color: #000; }
-        .btn-oil { background-color: #554433; }
-        .btn-nitro { background-color: #ff0055; }
-        .btn-wall { background-color: #777777; }
-        .btn-eraser { background-color: #444; }
-        .btn-clear { background-color: #a00; }
-
-        /* Custom Slider for Touch */
-        input[type=range] {
-            width: 80px;
+        button:active, button.active {
+            background: #5e81ac;
+            border-color: #81a1c1;
+            color: #fff;
         }
+        .btn-action { background: #bf616a; border-color: #d08770; color: #fff; }
+        .btn-save { background: #a3be8c; border-color: #8fbcbb; color: #2e3440; font-weight: bold; }
+        select, input[type=range], input[type=color] { touch-action: manipulation; }
     </style>
 </head>
 <body>
 
-    <h1>Sand Saga Simulator</h1>
+    <header>
+        <h1 id="app-title">Arcade Hub</h1>
+        <button class="nav-btn" id="homeBtn" onclick="showScreen('home-screen')">🏠 Home Menu</button>
+    </header>
 
-    <div class="canvas-container">
-        <canvas id="canvas" width="200" height="150" style="width: 600px; height: 450px;"></canvas>
+    <!-- HOME SCREEN HUB -->
+    <div id="home-screen" class="screen active">
+        <div class="hub-title">Game Arcade Hub</div>
+        <div class="hub-subtitle">Select a game or simulation to start playing!</div>
+        <div class="game-grid">
+            <div class="game-card" onclick="startPowderGame()">
+                <div class="game-icon">🧪</div>
+                <h3>Powder Box Sandbox</h3>
+                <p>Full physics sandbox with powders, liquids, logic machinery, & saving!</p>
+            </div>
+            <div class="game-card" onclick="startSnakeGame()">
+                <div class="game-icon">🐍</div>
+                <h3>Snake Arcade</h3>
+                <p>Classic arcade snake! Eat food, score points, swipe/arrow controls.</p>
+            </div>
+        </div>
     </div>
 
-    <!-- Pause & QoL Toolbar -->
-    <div class="qol-bar">
-        <button id="btn-pause" class="btn-qol" onclick="togglePause()">⏸️ Pause</button>
-        <button id="btn-step" class="btn-qol" onclick="stepFrame()" disabled>⏭️ Step</button>
-        <label for="brush-size">Size: <span id="size-val">2</span></label>
-        <input type="range" id="brush-size" min="1" max="10" value="2" oninput="updateBrushSize(this.value)">
-        <button class="btn-clear" onclick="clearCanvas()">🗑️ Clear</button>
+    <!-- POWDER GAME SCREEN -->
+    <div id="powder-screen" class="screen">
+        <div id="canvas-container">
+            <canvas id="canvas" width="280" height="180" style="width: 840px; height: 540px;"></canvas>
+        </div>
+
+        <div class="control-panel">
+            <div class="settings">
+                <label>Brush: <input type="range" id="brushSize" min="1" max="15" value="3"></label>
+                <span id="brushVal">3px</span>
+                
+                <label>Gravity: 
+                    <select id="gravityDir">
+                        <option value="DOWN">Down</option>
+                        <option value="UP">Up</option>
+                        <option value="ZERO">Zero-G</option>
+                    </select>
+                </label>
+
+                <label>Slot:
+                    <select id="saveSlot">
+                        <option value="slot1">Slot 1</option>
+                        <option value="slot2">Slot 2</option>
+                        <option value="slot3">Slot 3</option>
+                    </select>
+                </label>
+                <button class="btn-save" id="saveBtn">Save</button>
+                <button class="btn-save" id="loadBtn">Load</button>
+
+                <label>Color: <input type="color" id="customColorPicker" value="#ff0055"></label>
+
+                <button class="btn-action" id="clearBtn">Clear</button>
+                <button class="btn-action" id="explodeBtn">Boom</button>
+                <span id="fps" style="margin-left: auto; color: #81a1c1; font-family: monospace;">FPS: 60</span>
+            </div>
+
+            <div class="categories" id="elementContainer"></div>
+        </div>
     </div>
 
-    <!-- Material Palette -->
-    <div class="controls" id="btn-container">
-        <button class="btn-sand active" onclick="selectElement('sand', this)">Sand</button>
-        <button class="btn-water" onclick="selectElement('water', this)">Water</button>
-        <button class="btn-wood" onclick="selectElement('wood', this)">Wood</button>
-        <button class="btn-fire" onclick="selectElement('fire', this)">Fire</button>
-        <button class="btn-acid" onclick="selectElement('acid', this)">Acid</button>
-        <button class="btn-oil" onclick="selectElement('oil', this)">Oil</button>
-        <button class="btn-nitro" onclick="selectElement('nitro', this)">Nitro</button>
-        <button class="btn-wall" onclick="selectElement('wall', this)">Wall</button>
-        <button class="btn-eraser" onclick="selectElement('empty', this)">Eraser</button>
+    <!-- SNAKE GAME SCREEN -->
+    <div id="snake-screen" class="screen">
+        <div id="canvas-container">
+            <canvas id="snakeCanvas" width="400" height="400" style="width: 500px; height: 500px; background:#111;"></canvas>
+        </div>
+        <div style="margin-top: 10px; font-size: 16px; color: #ebcb8b;">
+            Score: <span id="snakeScore">0</span> | High Score: <span id="snakeHighScore">0</span>
+        </div>
+        <div style="margin-top: 6px; font-size: 12px; color: #d8dee9;">
+            Swipe screen or use Arrow Keys to move!
+        </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
+<script>
+// SCREEN MANAGER
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    
+    if (screenId === 'home-screen') {
+        document.getElementById('app-title').textContent = 'Arcade Hub';
+        stopPowder();
+        stopSnake();
+    }
+}
 
-        let grid = Array(width * height).fill(0);
-        let currentElement = 'sand';
-        let brushSize = 2;
-        let isPaused = false;
-        let stepRequested = false;
-        let isDrawing = false;
+function startPowderGame() {
+    showScreen('powder-screen');
+    document.getElementById('app-title').textContent = 'Powder Sandbox';
+    initPowder();
+}
 
-        const ELEMENTS = {
-            empty: { id: 0, color: [0, 0, 0] },
-            sand:  { id: 1, color: [224, 192, 104] },
-            water: { id: 2, color: [64, 128, 255] },
-            wood:  { id: 3, color: [139, 90, 43] },
-            fire:  { id: 4, color: [255, 69, 0] },
-            acid:  { id: 5, color: [50, 205, 50] },
-            oil:   { id: 6, color: [85, 68, 51] },
-            nitro: { id: 7, color: [255, 0, 85] },
-            wall:  { id: 8, color: [119, 119, 119] }
-        };
+function startSnakeGame() {
+    showScreen('snake-screen');
+    document.getElementById('app-title').textContent = 'Snake Arcade';
+    initSnake();
+}
 
-        function getIndex(x, y) { return y * width + x; }
+/* ===================================================
+   GAME 1: POWDER BOX SANDBOX ENGINE
+   =================================================== */
+const WIDTH = 280;
+const HEIGHT = 180;
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const imgData = ctx.createImageData(WIDTH, HEIGHT);
 
-        function selectElement(type, btn) {
-            currentElement = type;
-            document.querySelectorAll('#btn-container button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+const ELEMENTS = {
+    EMPTY:       { id: 0,  color: [0, 0, 0, 255],       cat: 'Tools' },
+    WALL:        { id: 1,  color: [120, 120, 120, 255], cat: 'Solids' },
+    WOOD:        { id: 2,  color: [139, 69, 19, 255],   cat: 'Solids' },
+    GLASS:       { id: 3,  color: [200, 240, 255, 100], cat: 'Solids' },
+    ICE:         { id: 4,  color: [170, 220, 255, 200], cat: 'Solids' },
+    TORCH:       { id: 5,  color: [255, 180, 0, 255],   cat: 'Solids' },
+    BOUNCY:      { id: 6,  color: [255, 105, 180, 255], cat: 'Solids' },
+    C4:          { id: 7,  color: [200, 160, 120, 255], cat: 'Solids' },
+
+    COPPER:      { id: 8,  color: [184, 115, 51, 255],  cat: 'Electricity' },
+    SPARK:       { id: 9,  color: [255, 255, 100, 255], cat: 'Electricity' },
+    ELECTRIC:    { id: 10, color: [0, 240, 255, 255],   cat: 'Electricity' },
+    SENSOR:      { id: 11, color: [160, 160, 80, 255],  cat: 'Electricity' },
+    AND_GATE:    { id: 12, color: [100, 180, 100, 255], cat: 'Electricity' },
+    NOT_GATE:    { id: 13, color: [220, 100, 100, 255], cat: 'Electricity' },
+
+    SAND:        { id: 14, color: [230, 200, 110, 255], cat: 'Powders' },
+    GUNPOWDER:   { id: 15, color: [90, 90, 90, 255],    cat: 'Powders' },
+    SALT:        { id: 16, color: [240, 240, 240, 255], cat: 'Powders' },
+    SEED:        { id: 17, color: [80, 200, 80, 255],   cat: 'Powders' },
+    TERMITE:     { id: 18, color: [210, 140, 80, 255],  cat: 'Powders' },
+    SNOW:        { id: 19, color: [250, 250, 255, 255], cat: 'Powders' },
+
+    WATER:       { id: 20, color: [50, 150, 255, 255],  cat: 'Liquids' },
+    OIL:         { id: 21, color: [160, 110, 20, 255],  cat: 'Liquids' },
+    ACID:        { id: 22, color: [100, 255, 0, 255],   cat: 'Liquids' },
+    LAVA:        { id: 23, color: [255, 100, 0, 255],   cat: 'Liquids' },
+    NITRO:       { id: 24, color: [0, 200, 150, 255],   cat: 'Liquids' },
+
+    FIRE:        { id: 25, color: [255, 60, 0, 255],    cat: 'Energy' },
+
+    SMOKE:       { id: 26, color: [100, 100, 100, 180], cat: 'Gases' },
+    GAS:         { id: 27, color: [180, 220, 100, 150], cat: 'Gases' },
+    METHANE:     { id: 28, color: [220, 150, 255, 160], cat: 'Gases' },
+    STEAM:       { id: 29, color: [220, 220, 240, 160], cat: 'Gases' },
+
+    DISPENSER:   { id: 30, color: [255, 140, 0, 255],   cat: 'Special' },
+    WATER_DISP:  { id: 31, color: [0, 100, 255, 255],   cat: 'Special' },
+    LAVA_DISP:   { id: 32, color: [200, 50, 0, 255],    cat: 'Special' },
+    CONVEY_L:    { id: 33, color: [70, 130, 180, 255],  cat: 'Special' },
+    CONVEY_R:    { id: 34, color: [100, 149, 237, 255], cat: 'Special' },
+    HOPPER:      { id: 35, color: [140, 100, 180, 255], cat: 'Special' },
+    PISTON:      { id: 36, color: [180, 140, 100, 255], cat: 'Special' },
+    STICKY_PIST: { id: 37, color: [140, 180, 100, 255], cat: 'Special' },
+    VIRUS:       { id: 38, color: [200, 0, 200, 255],   cat: 'Special' },
+    CLONE:       { id: 39, color: [255, 0, 200, 255],   cat: 'Special' },
+    VOID:        { id: 40, color: [150, 0, 0, 255],     cat: 'Special' },
+    FAN:         { id: 41, color: [80, 180, 200, 255],  cat: 'Special' },
+    CUSTOM:      { id: 42, color: [255, 0, 85, 255],    cat: 'Tools' },
+    ERASER:      { id: 43, color: [0, 0, 0, 255],       cat: 'Tools' }
+};
+
+let grid = new Uint8Array(WIDTH * HEIGHT);
+let cloneTypes = new Uint8Array(WIDTH * HEIGHT);
+let dispenserTypes = new Uint8Array(WIDTH * HEIGHT);
+let pistonState = new Uint8Array(WIDTH * HEIGHT);
+let pistonPushedType = new Uint8Array(WIDTH * HEIGHT);
+let life = new Uint8Array(WIDTH * HEIGHT);
+let customColorMap = new Array(WIDTH * HEIGHT);
+let activeElement = ELEMENTS.SAND.id;
+let gravityMode = 'DOWN';
+let powderAnimFrame = null;
+let powderInitialized = false;
+
+function initPowder() {
+    if (powderInitialized) return;
+    powderInitialized = true;
+
+    const container = document.getElementById('elementContainer');
+    container.innerHTML = '';
+    const categories = ['Powders', 'Liquids', 'Solids', 'Gases', 'Electricity', 'Energy', 'Special', 'Tools'];
+
+    categories.forEach(cat => {
+        const row = document.createElement('div');
+        row.className = 'cat-row';
+        const label = document.createElement('span');
+        label.className = 'cat-label';
+        label.textContent = cat;
+        row.appendChild(label);
+
+        Object.keys(ELEMENTS).forEach(key => {
+            const el = ELEMENTS[key];
+            if (el.cat === cat && key !== 'EMPTY') {
+                const btn = document.createElement('button');
+                btn.textContent = key.replace('_DISP', ' SPN').replace('CONVEY_', 'BELT ');
+                if (el.id === activeElement) btn.classList.add('active');
+                btn.onclick = () => {
+                    document.querySelectorAll('.categories button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    activeElement = el.id;
+                };
+                row.appendChild(btn);
+            }
+        });
+        container.appendChild(row);
+    });
+
+    const brushInput = document.getElementById('brushSize');
+    brushInput.oninput = (e) => document.getElementById('brushVal').textContent = e.target.value + 'px';
+    document.getElementById('gravityDir').onchange = (e) => gravityMode = e.target.value;
+
+    document.getElementById('clearBtn').onclick = () => {
+        grid.fill(0); life.fill(0); cloneTypes.fill(0); dispenserTypes.fill(0);
+        pistonState.fill(0); pistonPushedType.fill(0); customColorMap.fill(undefined);
+    };
+
+    document.getElementById('explodeBtn').onclick = () => {
+        for (let i = 0; i < grid.length; i++) {
+            if (grid[i] === ELEMENTS.GUNPOWDER.id || grid[i] === ELEMENTS.C4.id || grid[i] === ELEMENTS.NITRO.id || grid[i] === ELEMENTS.METHANE.id) {
+                grid[i] = ELEMENTS.FIRE.id; life[i] = 20;
+            }
         }
+    };
 
-        /* QoL Pause Controls */
-        function togglePause() {
+    document.getElementById('saveBtn').onclick = () => {
+        const slot = document.getElementById('saveSlot').value;
+        localStorage.setItem('powder_sandbox_' + slot, JSON.stringify({
+            grid: Array.from(grid), cloneTypes: Array.from(cloneTypes),
+            dispenserTypes: Array.from(dispenserTypes), customColorMap: customColorMap
+        }));
+        alert('Saved to ' + slot.toUpperCase() + '!');
+    };
+
+    document.getElementById('loadBtn').onclick = () => {
+        const slot = document.getElementById('saveSlot').value;
+        const dataStr = localStorage.getItem('powder_sandbox_' + slot);
+        if (!dataStr) return alert('No save found in ' + slot.toUpperCase());
+        const saveData = JSON.parse(dataStr);
+        grid.set(saveData.grid); cloneTypes.set(saveData.cloneTypes);
+        dispenserTypes.set(saveData.dispenserTypes);
+        customColorMap = saveData.customColorMap || new Array(WIDTH * HEIGHT);
+    };
+
+    setupPowderTouch();
+    loopPowder(performance.now());
+}
+
+function stopPowder() {
+    if (powderAnimFrame) cancelAnimationFrame(powderAnimFrame);
+    powderAnimFrame = null;
+    powderInitialized = false;
+}
+
+let isDrawing = false;
+function setupPowderTouch() {
+    function hexToRgb(hex) {
+        const res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return res ? [parseInt(res[1], 16), parseInt(res[2], 16), parseInt(res[3], 16), 255] : [255, 0, 85, 255];
+    }
+
+    function applyBrush(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const cx = Math.floor((clientX - rect.left) * (WIDTH / rect.width));
+        const cy = Math.floor((clientY - rect.top) * (HEIGHT / rect.height));
+        const radius = parseInt(document.getElementById('brushSize').value);
+
+        for (let dy = -radius; dy <= radius; dy++) {
+            for (let dx = -radius; dx <= radius; dx++) {
+                if (dx*dx + dy*dy <= radius*radius) {
+                    const x = cx + dx, y = cy + dy;
+                    if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
+                        const idx = y * WIDTH + x;
+                        const fill = (activeElement === ELEMENTS.ERASER.id) ? 0 : activeElement;
+                        grid[idx] = fill; life[idx] = 0;
+                        if (fill === ELEMENTS.CUSTOM.id) customColorMap[idx] = hexToRgb(document.getElementById('customColorPicker').value);
+                        else customColorMap[idx] = undefined;
+                        if (fill === ELEMENTS.FIRE.id) life[idx] = 12 + Math.random() * 8;
+                        if (fill === ELEMENTS.ELECTRIC.id) life[idx] = 5;
+                        if (fill === ELEMENTS.SMOKE.id || fill === ELEMENTS.STEAM.id || fill === ELEMENTS.METHANE.id) life[idx] = 40 + Math.random() * 20;
+                    }
+                }
+            }
+        }
+    }
+
+    const startDraw = (e) => { isDrawing = true; const p = e.touches ? e.touches[0] : e; applyBrush(p.clientX, p.clientY); };
+    const moveDraw = (e) => { if (!isDrawing) return; const p = e.touches ? e.touches[0] : e; applyBrush(p.clientX, p.clientY); if (e.touches) e.preventDefault(); };
+    const stopDraw = () => { isDrawing = false; };
+
+    canvas.onmousedown = startDraw; canvas.onmousemove = moveDraw; window.onmouseup = stopDraw;
+    canvas.addEventListener('touchstart', (e) => { startDraw(e); e.preventDefault(); }, { passive: false });
+    canvas.addEventListener('touchmove', moveDraw, { passive: false });
+    window.addEventListener('touchend', stopDraw);
+}
+
+function updatePowder() {
+    const nextGrid = new Uint8Array(grid);
+    const gDir = (gravityMode === 'DOWN') ? 1 : (gravityMode === 'UP') ? -1 : 0;
+
+    for (let y = (gDir >= 0 ? HEIGHT - 1 : 0); (gDir >= 0 ? y >= 0 : y < HEIGHT); y -= (gDir >= 0 ? 1 : -1)) {
+        for (let x = 0; x < WIDTH; x++) {
+            const i = y * WIDTH + x; const type = grid[i];
+            if (type === ELEMENTS.EMPTY.id || type === ELEMENTS.WALL.id || type === ELEMENTS.GLASS.id) continue;
+
+            const targetY = y + gDir;
+            const down = targetY * WIDTH + x, up = (y - 1) * WIDTH + x;
+            const left = y * WIDTH + (x - 1), right = y * WIDTH + (x + 1);
+            const downLeft = targetY * WIDTH + (x - 1), downRight = targetY * WIDTH + (x + 1);
+
+            // SENSOR
+            if (type === ELEMENTS.SENSOR.id) {
+                if (y > 0 && grid[up] !== ELEMENTS.EMPTY.id && grid[up] !== ELEMENTS.ELECTRIC.id) {
+                    [left, right, down].forEach(adj => { if (adj >= 0 && adj < WIDTH * HEIGHT && grid[adj] === ELEMENTS.COPPER.id) { nextGrid[adj] = ELEMENTS.ELECTRIC.id; life[adj] = 4; } });
+                }
+                continue;
+            }
+
+            // PISTONS
+            if (type === ELEMENTS.PISTON.id || type === ELEMENTS.STICKY_PIST.id) {
+                const isPowered = (x > 0 && grid[left] === ELEMENTS.ELECTRIC.id) || (x < WIDTH - 1 && grid[right] === ELEMENTS.ELECTRIC.id) || (y < HEIGHT - 1 && grid[down] === ELEMENTS.ELECTRIC.id);
+                if (isPowered && pistonState[i] === 0 && y > 1) {
+                    const aboveItem = grid[up], aboveTwo = (y - 2) * WIDTH + x;
+                    if (grid[aboveTwo] === ELEMENTS.EMPTY.id) { nextGrid[aboveTwo] = aboveItem; nextGrid[up] = ELEMENTS.WALL.id; pistonState[i] = 1; pistonPushedType[i] = aboveItem; }
+                } else if (!isPowered && pistonState[i] === 1 && y > 1) {
+                    if (type === ELEMENTS.STICKY_PIST.id) { const aboveTwo = (y - 2) * WIDTH + x; nextGrid[up] = grid[aboveTwo]; nextGrid[aboveTwo] = ELEMENTS.EMPTY.id; }
+                    else { nextGrid[up] = ELEMENTS.EMPTY.id; }
+                    pistonState[i] = 0;
+                }
+                continue;
+            }
+
+            // POWDERS
+            if (type === ELEMENTS.SAND.id || type === ELEMENTS.GUNPOWDER.id || type === ELEMENTS.SALT.id || type === ELEMENTS.SEED.id || type === ELEMENTS.TERMITE.id || type === ELEMENTS.SNOW.id) {
+                if (gDir !== 0 && targetY >= 0 && targetY < HEIGHT) {
+                    const target = grid[down]; const isLiquid = target === ELEMENTS.WATER.id || target === ELEMENTS.OIL.id || target === ELEMENTS.ACID.id;
+                    if (target === ELEMENTS.BOUNCY.id) { const bounceY = (y - 3) * WIDTH + x; if (bounceY >= 0 && grid[bounceY] === ELEMENTS.EMPTY.id) { nextGrid[bounceY] = type; nextGrid[i] = ELEMENTS.EMPTY.id; continue; } }
+                    if (target === ELEMENTS.EMPTY.id || isLiquid) { nextGrid[i] = target; nextGrid[down] = type; }
+                    else if (x > 0 && (grid[downLeft] === ELEMENTS.EMPTY.id || isLiquid)) { nextGrid[i] = grid[downLeft]; nextGrid[downLeft] = type; }
+                    else if (x < WIDTH - 1 && (grid[downRight] === ELEMENTS.EMPTY.id || isLiquid)) { nextGrid[i] = grid[downRight]; nextGrid[downRight] = type; }
+                }
+                continue;
+            }
+
+            // LIQUIDS
+            if (type === ELEMENTS.WATER.id || type === ELEMENTS.OIL.id || type === ELEMENTS.ACID.id || type === ELEMENTS.LAVA.id || type === ELEMENTS.NITRO.id) {
+                if (gDir !== 0 && targetY >= 0 && targetY < HEIGHT && grid[down] === ELEMENTS.EMPTY.id) { nextGrid[i] = ELEMENTS.EMPTY.id; nextGrid[down] = type; }
+                else { const dir = Math.random() < 0.5 ? -1 : 1; const side = y * WIDTH + (x + dir); if (x + dir >= 0 && x + dir < WIDTH && grid[side] === ELEMENTS.EMPTY.id) { nextGrid[i] = ELEMENTS.EMPTY.id; nextGrid[side] = type; } }
+                continue;
+            }
+
+            // FIRE
+            if (type === ELEMENTS.FIRE.id) {
+                life[i]--; if (life[i] <= 0) nextGrid[i] = 0;
+                else [down, up, left, right].forEach(adj => { if (adj >= 0 && adj < WIDTH * HEIGHT && (grid[adj] === ELEMENTS.WOOD.id || grid[adj] === ELEMENTS.GUNPOWDER.id)) { nextGrid[adj] = ELEMENTS.FIRE.id; life[adj] = 15; } });
+            }
+        }
+    }
+    grid = nextGrid;
+}
+
+function renderPowder() {
+    const data = imgData.data;
+    const colorMap = Object.values(ELEMENTS).reduce((acc, el) => { acc[el.id] = el.color; return acc; }, {});
+
+    for (let i = 0; i < grid.length; i++) {
+        const type = grid[i]; const color = (type === ELEMENTS.CUSTOM.id && customColorMap[i]) ? customColorMap[i] : (colorMap[type] || colorMap[0]);
+        const p = i * 4;
+        data[p] = color[0]; data[p+1] = color[1]; data[p+2] = color[2]; data[p+3] = color[3];
+    }
+    ctx.putImageData(imgData, 0, 0);
+}
+
+let lastTime = performance.now(), frameCount = 0;
+function loopPowder(now) {
+    updatePowder(); renderPowder();
+    frameCount++;
+    if (now - lastTime >= 1000) { document.getElementById('fps').textContent = 'FPS: ' + frameCount; frameCount = 0; lastTime = now; }
+    powderAnimFrame = requestAnimationFrame(loopPowder);
+}
+
+
+/* ===================================================
+   GAME 2: ARCADE SNAKE CLASSIC
+   =================================================== */
+const snakeCanvas = document.getElementById('snakeCanvas');
+const sCtx = snakeCanvas.getContext('2d');
+const gridTiles = 20; const tileSize = snakeCanvas.width / gridTiles;
+
+let snake = [{x: 10, y: 10}];
+let food = {x: 15, y: 15};
+let dx = 1, dy = 0;
+let score = 0, highScore = 0;
+let snakeInterval = null;
+
+function initSnake() {
+    snake = [{x: 10, y: 10}];
+    food = {x: 15, y: 15};
+    dx = 1; dy = 0; score = 0;
+    document.getElementById('snakeScore').textContent = score;
+    highScore = localStorage.getItem('snake_highscore') || 0;
+    document.getElementById('snakeHighScore').textContent = highScore;
+
+    if (snakeInterval) clearInterval(snakeInterval);
+    snakeInterval = setInterval(updateSnake, 100);
+
+    window.onkeydown = (e) => {
+        if (e.key === 'ArrowUp' && dy === 0) { dx = 0; dy = -1; }
+        if (e.key === 'ArrowDown' && dy === 0) { dx = 0; dy = 1; }
+        if (e.key === 'ArrowLeft' && dx === 0) { dx = -1; dy = 0; }
+        if (e.key === 'ArrowRight' && dx === 0) { dx = 1; dy = 0; }
+    };
+
+    // Swipe controls for iPad/Mobile
+    let touchStartX = 0, touchStartY = 0;
+    snakeCanvas.ontouchstart = (e) => { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; };
+    snakeCanvas.ontouchmove = (e) => {
+        if (!touchStartX || !touchStartY) return;
+        let diffX = touchStartX - e.touches[0].clientX;
+        let diffY = touchStartY - e.touches[0].clientY;
+
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            if (diffX > 0 && dx === 0) { dx = -1; dy = 0; }
+            else if (diffX < 0 && dx === 0) { dx = 1; dy = 0; }
+        } else {
+            if (diffY > 0 && dy === 0) { dx = 0; dy = -1; }
+            else if (diffY < 0 && dy === 0) { dx = 0; dy = 1; }
+        }
+        touchStartX = 0; touchStartY = 0; e.preventDefault();
+    };
+}
+
+function stopSnake() {
+    if (snakeInterval) clearInterval(snakeInterval);
+    snakeInterval = null;
+}
+
+function updateSnake() {
+    const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+
+    // Wall collision
+    if (head.x < 0 || head.x >= gridTiles || head.y < 0 || head.y >= gridTiles) return resetSnake();
+
+    // Self collision
+    for (let seg of snake) { if (seg.x === head.x && seg.y === head.y) return resetSnake(); }
+
+    snake.unshift(head);
+
+    // Eat Food
+    if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        document.getElementById('snakeScore').textContent = score;
+        if (score > highScore) { highScore = score; localStorage.setItem('snake_highscore', highScore); document.getElementById('snakeHighScore').textContent = highScore; }
+        food = { x: Math.floor(Math.random() * gridTiles), y: Math.floor(Math.random() * gridTiles) };
+    } else {
+        snake.pop();
+    }
+
+    renderSnake();
+}
+
+function renderSnake() {
+    sCtx.fillStyle = '#111'; sCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+
+    // Draw Food
+    sCtx.fillStyle = '#bf616a';
+    sCtx.fillRect(food.x * tileSize, food.y * tileSize, tileSize - 1, tileSize - 1);
+
+    // Draw Snake
+    sCtx.fillStyle = '#a3be8c';
+    snake.forEach(seg => sCtx.fillRect(seg.x * tileSize, seg.y * tileSize, tileSize - 1, tileSize - 1));
+}
+
+function resetSnake() {
+    alert('Game Over! Your Score: ' + score);
+    initSnake();
+}
+</script>
+</body>
+</html>
